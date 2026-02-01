@@ -2,37 +2,37 @@ import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-let socket: Socket | null = null;
+let socketInstance: Socket | null = null;
 
 export function connectSocket() {
-  if (socket) return socket;
+  if (socketInstance) return socketInstance;
   
-  socket = io(SOCKET_URL);
+  socketInstance = io(SOCKET_URL);
   
-  socket.on('connect', () => {
+  socketInstance.on('connect', () => {
     console.log('✅ Socket connected');
   });
   
-  socket.on('disconnect', () => {
+  socketInstance.on('disconnect', () => {
     console.log('❌ Socket disconnected');
   });
   
-  return socket;
+  return socketInstance;
 }
 
 export function getSocket(): Socket {
-  if (!socket) {
+  if (!socketInstance) {
     return connectSocket();
   }
-  return socket;
+  return socketInstance;
 }
 
 export function disconnectSocket() {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
+  if (socketInstance) {
+    socketInstance.disconnect();
+    socketInstance = null;
   }
 }
 
-// Export socket instance (auto-connects on first use)
-export const socket = getSocket();
+// Export initialized socket
+export const socket = connectSocket();

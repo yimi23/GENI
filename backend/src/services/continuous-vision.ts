@@ -16,7 +16,7 @@ import { state, addActivity } from '../state';
 import { conversationMemory } from './conversation-memory';
 
 const anthropic = new Anthropic({
-  apiKey: config.anthropicApiKey,
+  apiKey: config.anthropic.apiKey,
 });
 
 interface VisionAnalysis {
@@ -156,11 +156,8 @@ Be concise and factual. Only list real concerns.`,
       const session = conversationMemory.getOrCreateSession(config.patient.name);
       conversationMemory.addMessage(session.id, 'geni', message, {
         timeOfDay: this.getTimeOfDay(),
-        visionContext: {
-          activity: analysis.activity,
-          pillStatus: analysis.pillStatus,
-          concerns: analysis.concerns,
-        },
+        // Note: visionContext not currently in conversation metadata schema
+        // Could be added later if needed
       });
       
       // Log activity
@@ -303,15 +300,15 @@ Be concise and factual. Only list real concerns.`,
     const now = new Date();
     const hour = now.getHours();
     
-    // Find next medication
-    const schedule = config.patient.medications || [];
-    const upcoming = schedule.filter(med => {
+    // Find next medication from state
+    const schedule = state.todaysMedications || [];
+    const upcoming = schedule.filter((med: any) => {
       const [medHour] = med.time.split(':').map(Number);
       return medHour >= hour;
     });
     
     if (upcoming.length > 0) {
-      return upcoming.map(m => `${m.name} at ${m.time}`).join(', ');
+      return upcoming.map((m: any) => `${m.name} at ${m.time}`).join(', ');
     }
     
     return 'No upcoming medications today';
@@ -326,17 +323,17 @@ Be concise and factual. Only list real concerns.`,
     const minute = now.getMinutes();
     const currentMinutes = hour * 60 + minute;
     
-    const schedule = config.patient.medications || [];
+    const schedule = state.todaysMedications || [];
     
     // Find most recent medication (within past 2 hours)
     const recent = schedule
-      .map(med => {
+      .map((med: any) => {
         const [medHour, medMinute] = med.time.split(':').map(Number);
         const medMinutes = medHour * 60 + medMinute;
         return { ...med, medMinutes, diff: currentMinutes - medMinutes };
       })
-      .filter(m => m.diff >= 0 && m.diff <= 120) // Within 2 hours past
-      .sort((a, b) => a.diff - b.diff)[0];
+      .filter((m: any) => m.diff >= 0 && m.diff <= 120) // Within 2 hours past
+      .sort((a: any, b: any) => a.diff - b.diff)[0];
     
     return recent;
   }
