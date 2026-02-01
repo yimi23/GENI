@@ -4,13 +4,24 @@ import path from 'path';
 // Load from root .env file
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+const nodeEnv = process.env.NODE_ENV || 'development';
+
 export const config = {
   port: parseInt(process.env.PORT || '5000'),
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv,
   
   patient: {
     name: process.env.PATIENT_NAME || 'Margaret',
     caregiverPhone: process.env.CAREGIVER_PHONE || '',
+  },
+  
+  messaging: {
+    enabled: process.env.GENI_ENABLE_MESSAGING === 'true' || nodeEnv === 'production',
+  },
+  
+  fallDetection: {
+    enabled: process.env.GENI_ENABLE_FALL_DETECTION === 'true' || nodeEnv === 'production',
+    mode: (process.env.GENI_FALL_DETECTION_MODE || 'frame') as 'frame' | 'camera',
   },
   
   twilio: {
@@ -22,6 +33,7 @@ export const config = {
   
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY || '',
+    visionModel: process.env.ANTHROPIC_VISION_MODEL || 'claude-3-5-haiku-20241022',
   },
   
   openai: {

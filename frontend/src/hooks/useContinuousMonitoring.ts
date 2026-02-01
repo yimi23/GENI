@@ -27,7 +27,7 @@ export function useContinuousMonitoring(
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
   const [results, setResults] = useState<MonitoringResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastRequestTime = useRef<number>(0);
   const mountedRef = useRef(true);
 
@@ -161,12 +161,12 @@ export function useContinuousMonitoring(
     }
   };
 
-  // Auto-start monitoring on mount if enabled
+  // Auto-start monitoring on mount if enabled or previously running
   useEffect(() => {
     const wasMonitoring = sessionStorage.getItem('geni_monitoring_active') === 'true';
-    
-    // Auto-start if it was previously running OR if it's the first load
-    if (wasMonitoring || sessionStorage.getItem('geni_monitoring_active') === null) {
+
+    // Auto-start only if enabled or previously running
+    if (config.enabled || wasMonitoring) {
       if (!isMonitoring && !intervalRef.current) {
         console.log('🔄 Auto-starting monitoring on mount');
         // Small delay to ensure camera is ready
@@ -184,8 +184,10 @@ export function useContinuousMonitoring(
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      // Don't clear interval on unmount - we want it to persist through HMR
-      // Only clear when explicitly stopped
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
   }, []);
 

@@ -6,8 +6,9 @@
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import { state, addActivity } from '../state';
-import { emitActivity, emitFallAlert } from '../socket';
+import { emitActivity, emitFallAlert, emitFallDetected } from '../socket';
 import { sendWhatsAppMessage } from './twilio';
+import { sendCaregiverUpdate } from './caregiver-updates';
 
 interface FallEvent {
   timestamp: number;
@@ -17,15 +18,47 @@ interface FallEvent {
   data?: any;
 }
 
+interface FrameFallPose {
+  timestamp: number;
+  keypointsDetected: boolean;
+  noseX?: number;
+  noseVelocity?: number;
+  hipX?: number;
+  hipVelocity?: number;
+  shoulderX?: number;
+  frameHeight?: number;
+  frameWidth?: number;
+  personDown: boolean;
+  fallPrimed: boolean;
+  emergencyTriggered: boolean;
+  stillSeconds: number;
+  confirmationTime: number;
+}
+
 export class FallDetectionService {
   private pythonProcess: ChildProcess | null = null;
   private isRunning = false;
   private emergencyActive = false;
   private emergencyStartTime: number | null = null;
   private responseTimeout: NodeJS.Timeout | null = null;
+  private restartAttempts = 0;
+  private lastStartAt: number | null = null;
+  private lastImpactAt: number | null = null;
+  private impactWindowStart: number | null = null;
+  private impactCount = 0;
+  private currentIncidentId: string | null = null;
+  private incidentStartedAt: number | null = null;
   
   // Configuration
-  private readonly RESPONSE_TIMEOUT_MS = 60000; // 60 seconds
+  private readonly RESPONSE_TIMEOUT_MS = 15000; // 15 seconds
+  private readonly MAX_RESTART_ATTEMPTS = 3;
+  private readonly RESTART_DELAY_MS = 50000;
+  private readonly STABLE_RUN_RESET_MS = 120000;
+  private readonly BACKOFF_DELAY_MS = 300000;
+  private readonly IMPACT_VEL_THRESHOLD = 80;
+  private readonly IMPACT_COOLDOWN_MS = 2 * 60 * 1000;
+  private readonly IMPACT_WINDOW_MS = 5 * 60 * 1000;
+  private readonly INCIDENT_COOLDOWN_MS = 2 * 60 * 1000;
   private readonly scriptPath = path.join(__dirname, '../../scripts/fall_detection.py');
   
   /**
@@ -51,6 +84,7 @@ export class FallDetectionService {
     
     this.pythonProcess = spawn('python3', args);
     this.isRunning = true;
+    this.lastStartAt = Date.now();
     
     // Listen to stdout (JSON events)
     this.pythonProcess.stdout?.on('data', (data: Buffer) => {
@@ -80,10 +114,109 @@ export class FallDetectionService {
       
       // Auto-restart on crash (unless manually stopped)
       if (code !== 0 && code !== null) {
-        console.log('🔄 Restarting fall detection in 5 seconds...');
-        setTimeout(() => this.start(options), 5000);
+        const runtimeMs = this.lastStartAt ? Date.now() - this.lastStartAt : 0;
+        if (runtimeMs > this.STABLE_RUN_RESET_MS) {
+          this.restartAttempts = 0;
+        }
+        
+        this.restartAttempts += 1;
+        const delayMs =
+          this.restartAttempts > this.MAX_RESTART_ATTEMPTS
+            ? this.BACKOFF_DELAY_MS
+            : this.RESTART_DELAY_MS;
+        
+        if (this.restartAttempts > this.MAX_RESTART_ATTEMPTS) {
+          console.warn('⚠️  Fall detection unstable; backing off retries to 5 minutes. Check camera access.');
+        }
+        
+        const delayLabel = delayMs >= 60000 ? `${Math.round(delayMs / 60000)} minutes` : `${Math.round(delayMs / 1000)} seconds`;
+        console.log(`🔄 Restarting fall detection in ${delayLabel}... (attempt ${this.restartAttempts})`);
+        setTimeout(() => this.start(options), delayMs);
       }
     });
+  }
+
+  /**
+   * Update fall state from frame-based pose pipeline
+   */
+  updateFromFrame(pose: FrameFallPose, patientName: string) {
+    if (!pose.keypointsDetected) return;
+    
+    if (this.currentIncidentId && this.incidentStartedAt) {
+      const age = Date.now() - this.incidentStartedAt;
+      if (age < this.INCIDENT_COOLDOWN_MS) {
+        return;
+      }
+    }
+    
+    const noseVel = pose.noseVelocity ?? 0;
+    const hipVel = pose.hipVelocity ?? 0;
+    const impactDetected = Math.abs(noseVel) >= this.IMPACT_VEL_THRESHOLD ||
+      Math.abs(hipVel) >= this.IMPACT_VEL_THRESHOLD;
+    
+    if (impactDetected && !this.emergencyActive) {
+      if (this.currentIncidentId) return;
+      const now = Date.now();
+      if (!this.lastImpactAt || now - this.lastImpactAt > this.IMPACT_COOLDOWN_MS) {
+        this.lastImpactAt = now;
+        if (!this.impactWindowStart || now - this.impactWindowStart > this.IMPACT_WINDOW_MS) {
+          this.impactWindowStart = now;
+          this.impactCount = 0;
+        }
+        this.impactCount += 1;
+        
+        const activity = addActivity('Possible head/impact detected', 'system');
+        emitActivity(activity);
+        this.startIncident();
+        emitFallDetected({ incidentId: this.currentIncidentId });
+        emitFallAlert({
+          state: 'confirming',
+          message: 'Fall detected - checking on you...',
+          progress: 0,
+          patient: patientName,
+          timestamp: Date.now(),
+          data: { incidentId: this.currentIncidentId },
+        });
+        // Frontend modal handles audible prompts to avoid overlapping TTS.
+        
+        sendCaregiverUpdate({
+          type: 'fall_detected',
+          priority: 'high',
+          message: `GENI detected a sudden impact for ${patientName}. Monitoring for response; will call 911 if no response.`,
+          details: { impactCount: this.impactCount }
+        }).catch(error => {
+          console.error('❌ Failed to notify caregiver of impact:', error);
+        });
+        
+        if (this.impactCount >= 2) {
+          sendCaregiverUpdate({
+            type: 'unusual_activity',
+            priority: 'medium',
+            message: `GENI detected repeated sudden movements for ${patientName} within the last few minutes. Please check in.`,
+            details: { impactCount: this.impactCount }
+          }).catch(error => {
+            console.error('❌ Failed to send caregiver impact update:', error);
+          });
+        }
+      }
+    }
+    
+    if ((pose.emergencyTriggered || pose.fallPrimed) && !this.emergencyActive) {
+      const emergencyPose = {
+        ...pose,
+        emergencyTriggered: true,
+      };
+      this.activateEmergencyFromFrame(emergencyPose, patientName);
+      return;
+    }
+    
+    if (pose.fallPrimed && !this.emergencyActive) {
+      emitFallAlert({
+        state: 'confirming',
+        message: 'Checking on you...',
+        progress: pose.confirmationTime > 0 ? pose.stillSeconds / pose.confirmationTime : 0,
+      });
+    }
   }
   
   /**
@@ -215,6 +348,62 @@ export class FallDetectionService {
       this.escalateEmergency(event);
     }, this.RESPONSE_TIMEOUT_MS);
   }
+
+  /**
+   * Activate emergency from frame-based pose pipeline
+   */
+  private async activateEmergencyFromFrame(pose: FrameFallPose, patientName: string) {
+    this.emergencyActive = true;
+    this.emergencyStartTime = Date.now();
+    this.startIncident();
+    
+    const activity = addActivity(
+      `🚨 FALL DETECTED: ${patientName} may have fallen and is unresponsive`,
+      'emergency'
+    );
+    emitActivity(activity);
+    
+    emitFallAlert({
+      state: 'emergency',
+      message: 'FALL DETECTED - Are you okay?',
+      patient: patientName,
+      timestamp: pose.timestamp,
+      data: { confirmation_time: pose.confirmationTime, incidentId: this.currentIncidentId }
+    });
+    emitFallDetected({ incidentId: this.currentIncidentId });
+    // Frontend modal handles audible prompts to avoid overlapping TTS.
+    
+    sendCaregiverUpdate({
+      type: 'fall_detected',
+      priority: 'urgent',
+      message: `GENI detected a fall for ${patientName}. Calling 911 now unless cancelled.`,
+      details: { confirmationTime: pose.confirmationTime }
+    }).catch(error => {
+      console.error('❌ Failed to notify caregiver of 911 decision:', error);
+    });
+    
+    const event: FallEvent = {
+      timestamp: Math.round(pose.timestamp),
+      level: 'emergency',
+      message: 'FALL DETECTED - CONFIRMED',
+      patient: patientName,
+      data: { confirmation_time: pose.confirmationTime },
+    };
+    
+    await this.sendCaregiverAlert(event);
+    
+    this.responseTimeout = setTimeout(() => {
+      this.simulateEmergencyCall(event);
+      this.escalateEmergency(event);
+    }, this.RESPONSE_TIMEOUT_MS);
+  }
+
+  private simulateEmergencyCall(event: FallEvent) {
+    console.log('📞 Simulating 911 call...');
+    const activity = addActivity('Simulated 911 call initiated', 'emergency');
+    emitActivity(activity);
+    // Frontend modal handles audible prompts to avoid overlapping TTS.
+  }
   
   /**
    * Send WhatsApp alert to caregiver
@@ -336,6 +525,8 @@ Consider calling emergency services (911) if you cannot reach ${event.patient}.
     // Reset emergency state
     this.emergencyActive = false;
     this.emergencyStartTime = null;
+    this.currentIncidentId = null;
+    this.incidentStartedAt = null;
     
     // Log activity
     const activity = addActivity(
@@ -354,6 +545,13 @@ Consider calling emergency services (911) if you cannot reach ${event.patient}.
     this.sendFalseAlarmNotification();
     
     return true;
+  }
+
+  private startIncident() {
+    if (!this.currentIncidentId) {
+      this.currentIncidentId = `fall-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      this.incidentStartedAt = Date.now();
+    }
   }
   
   /**

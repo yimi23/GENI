@@ -1,6 +1,6 @@
 /**
  * GENI Continuous Vision Hook
- * Sends camera frames to backend every 5 seconds for analysis
+ * Sends camera frames to backend on a timed interval for analysis
  * 
  * Learned from fall_detection.py:
  * - Continuous loop (runs constantly)
@@ -12,11 +12,32 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
 
+const API_URL = (import.meta.env as Record<string, any>).VITE_API_URL || 'http://localhost:5001';
+
 interface VisionUpdate {
   timestamp: Date;
   observation: string;
   message?: string;
   concerns: string[];
+}
+
+interface FallPoseUpdate {
+  noseX?: number;
+  noseY?: number;
+  hipX?: number;
+  hipY?: number;
+  shoulderX?: number;
+  shoulderY?: number;
+  noseVelocity?: number;
+  hipVelocity?: number;
+  personDown: boolean;
+  fallPrimed: boolean;
+  emergencyTriggered: boolean;
+  stillSeconds: number;
+  confirmationTime: number;
+  keypointsDetected: boolean;
+  frameHeight?: number;
+  frameWidth?: number;
 }
 
 interface ContinuousVisionConfig {
@@ -32,8 +53,9 @@ export function useContinuousVision(
   const [isPaused, setIsPaused] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<VisionUpdate | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [lastFallPose, setLastFallPose] = useState<FallPoseUpdate | null>(null);
   
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
   
   /**
@@ -87,16 +109,26 @@ export function useContinuousVision(
       const imageBase64 = await captureFrame();
       
       console.log('🔍 Continuous vision: Sending to backend...');
-      const response = await fetch('http://localhost:5001/api/vision/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ image: imageBase64 }),
-      });
       
-      if (!response.ok) {
-        throw new Error(`Vision analysis failed: ${response.statusText}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      
+      let response;
+      try {
+        response = await fetch(`${API_URL}/api/vision/analyze`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ image: imageBase64, source: 'continuous' }),
+          signal: controller.signal,
+        });
+      
+        if (!response.ok) {
+          throw new Error(`Vision analysis failed: ${response.statusText}`);
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
       
       const result = await response.json();
@@ -104,6 +136,11 @@ export function useContinuousVision(
       if (result.status === 'paused') {
         console.log('⏸️  Vision paused on backend');
         return;
+      }
+      
+      if (result.fallPose?.keypointsDetected) {
+        console.log('🧠 Fall pose (frame):', result.fallPose);
+        setLastFallPose(result.fallPose as FallPoseUpdate);
       }
       
       console.log('✅ Vision analysis complete:', result.observations);
@@ -214,6 +251,7 @@ export function useContinuousVision(
     isActive,
     isPaused,
     lastUpdate,
+    lastFallPose,
     isProcessing,
     start,
     stop,

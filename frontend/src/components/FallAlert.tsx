@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { AlertOctagon, Check, X } from 'lucide-react';
+import { AlertOctagon, Check } from 'lucide-react';
 
 interface FallAlertProps {
   state: 'confirming' | 'emergency' | 'escalated' | 'cancelled';
@@ -14,7 +14,8 @@ interface FallAlertProps {
   onConfirmOK: () => void;
 }
 
-export function FallAlert({ state, message, patient, progress = 0, onConfirmOK }: FallAlertProps) {
+export function FallAlert({ state, ...props }: FallAlertProps) {
+  const { onConfirmOK, progress = 0 } = props;
   const [countdown, setCountdown] = useState(60);
   const [userConfirmed, setUserConfirmed] = useState(false);
   

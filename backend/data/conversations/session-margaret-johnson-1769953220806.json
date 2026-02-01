@@ -1,0 +1,28 @@
+[
+  {
+    "id": "msg-1769953220812-a7bl9g7dt",
+    "sessionId": "session-margaret-johnson-1769953220806",
+    "timestamp": "2026-02-01T13:40:20.812Z",
+    "role": "user",
+    "type": "text",
+    "content": "What time should I take my medications?",
+    "metadata": {
+      "timeOfDay": "morning",
+      "medicationsPending": [
+        "Blood Pressure Med"
+      ]
+    }
+  },
+  {
+    "id": "msg-1769953223627-42xz19tml",
+    "sessionId": "session-margaret-johnson-1769953220806",
+    "timestamp": "2026-02-01T13:40:23.627Z",
+    "role": "geni",
+    "type": "text",
+    "content": "Hi Margaret, it's important to take medications at the right time. Could you tell me more about your specific medications and what your doctor recommended?",
+    "metadata": {
+      "isFollowUp": true,
+      "timeOfDay": "morning"
+    }
+  }
+]

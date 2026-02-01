@@ -1,0 +1,14 @@
+[
+  {
+    "id": "msg-1769963189089-3xu4cmnvu",
+    "sessionId": "session-margaret-johnson-1769963189088",
+    "timestamp": "2026-02-01T16:26:29.089Z",
+    "role": "geni",
+    "type": "text",
+    "content": "Can't see your pill box. Did you take your meds?",
+    "metadata": {
+      "timeOfDay": "morning",
+      "visionSnapshot": "Analysis unavailable | activity: unclear | pillStatus: unclear"
+    }
+  }
+]

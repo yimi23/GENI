@@ -2,11 +2,16 @@ import twilio from 'twilio';
 import { config } from '../config';
 
 const client = twilio(config.twilio.accountSid, config.twilio.authToken);
+const isMessagingEnabled = () => config.messaging.enabled;
 
 /**
  * Send WhatsApp message to caregiver
  */
 export async function sendWhatsAppMessage(to: string, message: string): Promise<boolean> {
+  if (!isMessagingEnabled()) {
+    console.log('ℹ️ Messaging disabled; skipping WhatsApp send.');
+    return false;
+  }
   try {
     const result = await client.messages.create({
       from: `whatsapp:${config.twilio.whatsappNumber}`,
@@ -26,6 +31,10 @@ export async function sendWhatsAppMessage(to: string, message: string): Promise<
  * Send SMS message
  */
 export async function sendSMS(to: string, message: string): Promise<boolean> {
+  if (!isMessagingEnabled()) {
+    console.log('ℹ️ Messaging disabled; skipping SMS send.');
+    return false;
+  }
   try {
     const result = await client.messages.create({
       from: config.twilio.phoneNumber,
@@ -52,6 +61,10 @@ export async function makeVoiceCall(
   message: string, 
   callerName: string = 'GENI'
 ): Promise<boolean> {
+  if (!isMessagingEnabled()) {
+    console.log('ℹ️ Messaging disabled; skipping voice call.');
+    return false;
+  }
   try {
     // Generate TwiML for the call
     const twiml = `

@@ -5,12 +5,38 @@ import { proactiveHealthCheck, checkMedicationAdherence } from './proactive';
 import { addActivity } from '../state';
 import { shouldInitiateConversation, generateConversationStarter } from './conversation';
 import { emitSpeak } from '../socket';
+import { healthReportService } from './health-report-sms';
+import { adherenceReportService } from './adherence-report-sms';
 
 /**
  * Initialize all scheduled tasks
  */
 export function initializeScheduler() {
   console.log('⏰ Initializing scheduler...');
+  
+  // Daily health report SMS: 8:00 AM every day
+  cron.schedule('0 8 * * *', async () => {
+    console.log('📊 Running daily health report SMS...');
+    try {
+      await healthReportService.sendDailyReport();
+    } catch (error) {
+      console.error('Error sending daily health report:', error);
+    }
+  }, {
+    timezone: 'America/Detroit'
+  });
+
+  // Weekly medication adherence report SMS: Sunday at 6:00 PM
+  cron.schedule('0 18 * * 0', async () => {
+    console.log('💊 Running weekly adherence report SMS...');
+    try {
+      await adherenceReportService.sendWeeklyReport();
+    } catch (error) {
+      console.error('Error sending adherence report:', error);
+    }
+  }, {
+    timezone: 'America/Detroit'
+  });
   
   // Daily report: 9:00 PM every day
   cron.schedule('0 21 * * *', async () => {

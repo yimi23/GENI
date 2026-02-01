@@ -1,0 +1,14 @@
+[
+  {
+    "id": "msg-1769964792916-h7npo8jri",
+    "sessionId": "session-margaret-johnson-1769964792916",
+    "timestamp": "2026-02-01T16:53:12.916Z",
+    "role": "geni",
+    "type": "text",
+    "content": "Margaret, you haven't taken your medications all week. I'm really concerned. Let's talk about what's going on.",
+    "metadata": {
+      "timeOfDay": "morning",
+      "visionSnapshot": "Weekly pill organizer filled with multiple colored pills, each compartment labeled with a day of the week | activity: not visible | pillStatus: present"
+    }
+  }
+]

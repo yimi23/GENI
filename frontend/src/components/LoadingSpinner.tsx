@@ -138,7 +138,7 @@ export function CameraAnalysisOverlay({ status, progress = 0 }: CameraOverlayPro
 
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <div className={`${colorClasses[config.color]} border-4 rounded-lg p-4 backdrop-blur-sm`}>
+      <div className={`${colorClasses[config.color as keyof typeof colorClasses]} border-4 rounded-lg p-4 backdrop-blur-sm`}>
         <div className="flex items-center gap-3">
           <span className="text-3xl animate-pulse">{config.icon}</span>
           <div>

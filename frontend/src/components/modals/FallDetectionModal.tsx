@@ -1,24 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Check, AlertTriangle } from 'lucide-react';
 import { api } from '../../services/api';
+import { speak, stopSpeaking } from '../../services/tts';
 
 interface FallDetectionModalProps {
   isOpen: boolean;
+  incidentId?: string | null;
   onClose: () => void;
 }
 
 type ModalStage = 'alert' | 'countdown' | 'notifying' | 'confirmed';
 
-export function FallDetectionModal({ isOpen, onClose }: FallDetectionModalProps) {
+export function FallDetectionModal({ isOpen, incidentId, onClose }: FallDetectionModalProps) {
   const [stage, setStage] = useState<ModalStage>('alert');
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(15);
   const [notificationStatus, setNotificationStatus] = useState<{name: string; status: 'sending' | 'sent'}[]>([]);
+  const [canDismiss, setCanDismiss] = useState(false);
+  const reminderTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastSpokenKey = useRef<string | null>(null);
+  const simulatedCallStarted = useRef(false);
 
   useEffect(() => {
     if (!isOpen) {
       setStage('alert');
-      setTimeLeft(60);
+      setTimeLeft(15);
       setNotificationStatus([]);
+      setCanDismiss(false);
+      simulatedCallStarted.current = false;
+      if (reminderTimer.current) {
+        clearInterval(reminderTimer.current);
+        reminderTimer.current = null;
+      }
+      stopSpeaking();
       return;
     }
 
@@ -46,6 +59,46 @@ export function FallDetectionModal({ isOpen, onClose }: FallDetectionModalProps)
       return () => clearInterval(interval);
     }
   }, [stage, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const message = stage === 'countdown' || stage === 'notifying' || stage === 'confirmed'
+      ? 'Emergency help is being contacted. If you are okay, press the button on the screen to cancel.'
+      : 'Fall detected. Are you okay? Help will be called soon unless cancelled.';
+    
+    const key = `${incidentId || 'unknown'}:${stage}`;
+    if (lastSpokenKey.current !== key) {
+      lastSpokenKey.current = key;
+      speak(message);
+    }
+    
+    if (reminderTimer.current) {
+      clearInterval(reminderTimer.current);
+      reminderTimer.current = null;
+    }
+    
+    return () => {
+      if (reminderTimer.current) {
+        clearInterval(reminderTimer.current);
+        reminderTimer.current = null;
+      }
+    };
+  }, [isOpen, stage, incidentId]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    setCanDismiss(false);
+    const timer = setTimeout(() => setCanDismiss(true), 10000);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setStage('countdown');
+    setTimeLeft(15);
+  }, [isOpen, incidentId]);
 
   const playBeep = (timeRemaining: number) => {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -91,6 +144,17 @@ export function FallDetectionModal({ isOpen, onClose }: FallDetectionModalProps)
     
     // Show notification UI (backend handles actual calling)
     setStage('notifying');
+
+    if (!simulatedCallStarted.current) {
+      simulatedCallStarted.current = true;
+      // Simulated 911 call script (local TTS only)
+      speak('Calling 911 now.');
+      speak('Dispatcher: 911, what is your emergency?');
+      speak('GENI: This is GENI, an elder care system. Possible fall detected for Margaret Johnson. No response.');
+      speak('Dispatcher: What is the location?');
+      speak('GENI: Please dispatch emergency services. A caregiver has been notified.');
+      speak('Dispatcher: Help is on the way.');
+    }
     
     setNotificationStatus([
       { name: 'Sarah (Daughter)', status: 'sending' }
@@ -139,7 +203,10 @@ export function FallDetectionModal({ isOpen, onClose }: FallDetectionModalProps)
       aria-live="assertive"
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="bg-white rounded-lg p-8 max-w-lg w-full mx-6 shadow-xl">
+      <div className="bg-white rounded-lg p-8 max-w-lg w-full mx-6 shadow-xl border-4 border-red-600">
+        <div className="mb-4 bg-red-600 text-white text-center py-2 font-bold tracking-widest rounded animate-pulse">
+          EMERGENCY ALERT
+        </div>
         {stage === 'alert' && (
           <div className="text-center">
             <div className="mb-8">
@@ -173,13 +240,14 @@ export function FallDetectionModal({ isOpen, onClose }: FallDetectionModalProps)
             </div>
 
             <div className="text-sm text-gray-500 mb-3">
-              Calling help in 60 seconds
+              Calling help in 15 seconds
             </div>
             <button
               onClick={onClose}
-              className="text-sm text-gray-400 hover:text-gray-600 underline font-medium"
+              className={`text-sm underline font-medium ${canDismiss ? 'text-gray-400 hover:text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
+              disabled={!canDismiss}
             >
-              Cancel
+              {canDismiss ? 'Cancel' : 'Hold to dismiss (10s)'}
             </button>
           </div>
         )}

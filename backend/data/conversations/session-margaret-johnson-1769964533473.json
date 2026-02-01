@@ -1,0 +1,14 @@
+[
+  {
+    "id": "msg-1769964533475-9tdqt8xa0",
+    "sessionId": "session-margaret-johnson-1769964533473",
+    "timestamp": "2026-02-01T16:48:53.475Z",
+    "role": "geni",
+    "type": "text",
+    "content": "Patient not visible. Checking safety and awaiting confirmation.",
+    "metadata": {
+      "timeOfDay": "morning",
+      "visionSnapshot": "7-day pill organizer filled with pastel-colored pills/tablets, laid out on a dark surface | activity: not visible | pillStatus: present"
+    }
+  }
+]

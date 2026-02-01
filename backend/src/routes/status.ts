@@ -11,6 +11,8 @@ router.get('/status', (req: Request, res: Response) => {
     activities: state.activities.slice(0, 10), // Last 10 activities
     reminders: state.reminders,
     hardware: state.hardwareStatus,
+    pillCheckResults: state.pillCheckResults.slice(-5), // Last 5 pill checks
+    familyMessages: state.familyMessages.slice(-10), // Last 10 messages
   });
 });
 

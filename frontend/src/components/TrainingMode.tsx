@@ -36,7 +36,7 @@ const TrainingMode: React.FC = () => {
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+  const API_URL = (import.meta.env as Record<string, any>).VITE_API_URL || 'http://localhost:5001';
 
   // Initialize camera
   useEffect(() => {

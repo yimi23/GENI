@@ -1,0 +1,14 @@
+[
+  {
+    "id": "msg-1769957557587-2wruohg5h",
+    "sessionId": "session-margaret-johnson-1769957557587",
+    "timestamp": "2026-02-01T14:52:37.587Z",
+    "role": "geni",
+    "type": "text",
+    "content": "Hey Margaret, I see you there with your glasses on. Can't quite spot your pill organizer - did you take your blood pressure med for today?",
+    "metadata": {
+      "timeOfDay": "morning",
+      "visionSnapshot": "Analysis unavailable | activity: unclear | pillStatus: unclear"
+    }
+  }
+]

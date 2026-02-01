@@ -7,11 +7,12 @@ import { state } from '../state';
 import type { Activity } from '../models/Activity';
 import type { Medication } from '../models/Medication';
 
-// TODO: Move to proper models file
-interface IncomingMessage {
+interface FamilyMessage {
+  id: string;
   senderName: string;
   message: string;
   timestamp: Date;
+  read: boolean;
 }
 
 export interface GENIContext {
@@ -44,7 +45,7 @@ export interface GENIContext {
   activityLevel: 'active' | 'normal' | 'quiet' | 'concerning';
   
   // Family/messages
-  pendingFamilyMessages: IncomingMessage[];
+  pendingFamilyMessages: FamilyMessage[];
   hasPendingMessages: boolean;
   
   // Conversation context
@@ -143,7 +144,7 @@ export function buildGENIContext(): GENIContext {
   const activityLevel = getActivityLevel(state.activities);
   
   // Family messages
-  const pendingFamilyMessages: IncomingMessage[] = []; // TODO: Track pending messages in state
+  const pendingFamilyMessages = state.familyMessages.filter(m => !m.read);
   
   // Last interaction
   const lastInteractionTime = lastActivityTime; // For now, using last activity
@@ -158,8 +159,10 @@ export function buildGENIContext(): GENIContext {
   const lastPillCheckActivity = pillCheckActivities[0];
   const lastPillCheckTime = lastPillCheckActivity ? new Date(lastPillCheckActivity.timestamp) : null;
   
-  // TODO: Store structured pill check results in state
-  const lastPillCheckResult = null;
+  // Last pill check (from state)
+  const lastPillCheckResult = state.pillCheckResults.length > 0 
+    ? state.pillCheckResults[state.pillCheckResults.length - 1]
+    : null;
   
   // Extract first name only (e.g., "Margaret Johnson" → "Margaret")
   const firstName = state.patient.name.split(' ')[0];

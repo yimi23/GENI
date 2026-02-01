@@ -68,9 +68,9 @@ export function emitSpeak(text: string) {
   }
 }
 
-export function emitFallDetected() {
+export function emitFallDetected(data: Record<string, any> = {}) {
   if (io) {
-    io.emit('fall_detected', {});
+    io.emit('fall_detected', data);
   }
 }
 

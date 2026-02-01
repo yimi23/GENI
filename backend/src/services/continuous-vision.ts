@@ -52,8 +52,9 @@ class ContinuousVisionService {
     
     try {
       const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: config.anthropic.visionModel,
         max_tokens: 300,
+        system: "You are a computer vision API. You MUST respond with ONLY a valid JSON object. No extra text, no markdown. Start with { and end with }.",
         messages: [
           {
             role: 'user',
@@ -102,11 +103,25 @@ Be concise and factual. Only list real concerns.`,
       
       // Parse JSON response
       const jsonMatch = content.text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON found in response');
+      let analysis: any = null;
+      if (jsonMatch) {
+        try {
+          analysis = JSON.parse(jsonMatch[0]);
+        } catch (error) {
+          console.error('❌ Vision JSON parse failed:', error);
+        }
       }
       
-      const analysis = JSON.parse(jsonMatch[0]);
+      if (!analysis) {
+        console.error('❌ No JSON found in vision response.');
+        return {
+          timestamp: new Date(),
+          observations: 'Vision response invalid (no JSON).',
+          activity: 'unclear',
+          pillStatus: 'unclear',
+          concerns: [],
+        };
+      }
       
       const result: VisionAnalysis = {
         timestamp: new Date(),
@@ -137,7 +152,11 @@ Be concise and factual. Only list real concerns.`,
   /**
    * Process analysis and generate contextual output
    */
-  async processAnalysis(analysis: VisionAnalysis): Promise<void> {
+  async processAnalysis(
+    analysis: VisionAnalysis,
+    options: { emitUpdates?: boolean; speak?: boolean; recordMemory?: boolean } = {}
+  ): Promise<string | null> {
+    const { emitUpdates = true, speak = true, recordMemory = true } = options;
     console.log('⚙️  Processing vision analysis...');
     
     // Update state tracking
@@ -152,31 +171,36 @@ Be concise and factual. Only list real concerns.`,
     if (message) {
       console.log('💬 Generated contextual message:', message);
       
-      // Add to conversation memory
-      const session = conversationMemory.getOrCreateSession(config.patient.name);
-      conversationMemory.addMessage(session.id, 'geni', message, {
-        timeOfDay: this.getTimeOfDay(),
-        // Note: visionContext not currently in conversation metadata schema
-        // Could be added later if needed
-      });
+      if (recordMemory) {
+        const session = conversationMemory.getOrCreateSession(config.patient.name);
+        conversationMemory.addMessage(session.id, 'geni', message, {
+          timeOfDay: this.getTimeOfDay(),
+          // Note: visionContext not currently in conversation metadata schema
+          // Could be added later if needed
+        });
+      }
       
       // Log activity
       const activity = addActivity(`GENI vision: ${message}`, 'message');
       
-      // Emit to frontend
-      emitVisionUpdate({
-        timestamp: analysis.timestamp,
-        observation: analysis.observations,
-        message,
-        concerns: analysis.concerns,
-      });
+      if (emitUpdates) {
+        emitVisionUpdate({
+          timestamp: analysis.timestamp,
+          observation: analysis.observations,
+          message,
+          concerns: analysis.concerns,
+        });
+      }
       
-      // Speak the message
-      emitSpeak(message);
+      if (speak) {
+        emitSpeak(message);
+      }
     }
     
     // Store as last analysis
     this.state.lastAnalysis = analysis;
+    
+    return message || null;
   }
   
   /**

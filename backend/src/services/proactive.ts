@@ -2,31 +2,75 @@ import { state, addActivity } from '../state';
 import { sendWhatsAppMessage } from './twilio';
 import { emitActivity, emitSpeak } from '../socket';
 
+const CAREGIVER_ALERT_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+const NO_ACTIVITY_ALERT_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+const lastMedicationAlertAt = new Map<string, number>();
+let lastNoActivityAlertAt: number | null = null;
+
+function parseTimeToMinutes(time: string): number {
+  const [timePart, periodPart] = time.split(' ');
+  const [hourStr, minuteStr] = timePart.split(':');
+  let hours = parseInt(hourStr, 10);
+  const minutes = parseInt(minuteStr, 10);
+  const period = (periodPart || '').toLowerCase();
+  
+  if (period === 'pm' && hours < 12) hours += 12;
+  if (period === 'am' && hours === 12) hours = 0;
+  
+  return hours * 60 + minutes;
+}
+
+function getRecentPillCheckContext(): string | null {
+  const last = state.pillCheckResults[state.pillCheckResults.length - 1];
+  if (!last) return null;
+  
+  const ageMs = Date.now() - last.timestamp.getTime();
+  if (ageMs > 2 * 60 * 60 * 1000) return null;
+  
+  const timeStr = last.timestamp.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return `Last camera check at ${timeStr} showed "${last.status}" (${last.confidence}).`;
+}
+
 // Proactive Intelligence Service for Elder Care
 
 export async function checkMedicationAdherence() {
   const now = new Date();
-  const currentHour = now.getHours();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
   
   for (const med of state.todaysMedications) {
     if (med.status === 'pending') {
-      const medHour = parseInt(med.time.split(':')[0]);
-      const hoursSince = currentHour - medHour;
+      const medMinutes = parseTimeToMinutes(med.time);
+      const minutesSince = nowMinutes - medMinutes;
       
       // After 30 minutes, gentle reminder
-      if (hoursSince === 0.5) {
+      if (minutesSince >= 30 && minutesSince < 60) {
         const reminder = `Hi ${state.patient.name}, just checking - did you take your ${med.time} ${med.name}?`;
         emitSpeak(reminder);
         addActivity(reminder, 'system');
       }
       
       // After 2 hours, alert caregiver
-      if (hoursSince >= 2) {
+      if (minutesSince >= 120) {
+        const alertKey = `${med.name}-${med.time}`;
+        const lastSent = lastMedicationAlertAt.get(alertKey);
+        if (lastSent && Date.now() - lastSent < CAREGIVER_ALERT_COOLDOWN_MS) {
+          continue;
+        }
+        
+        const context = getRecentPillCheckContext();
+        if (!context) {
+          console.log('⚠️  Skipping caregiver alert: no recent pill check context.');
+          continue;
+        }
+        
         const primaryContact = state.contacts.find(c => c.isPrimary);
         if (primaryContact) {
-          const alert = `${state.patient.name} hasn't confirmed ${med.time} medication (${med.name}). Please check in.`;
-          await sendWhatsAppMessage(primaryContact.phone, `Hey, this is GENI. ${alert}`);
-          addActivity(`Alert sent to ${primaryContact.name}: Missed medication`, 'system');
+          const alert = `${state.patient.name} hasn't confirmed ${med.time} medication (${med.name}). Please check in. ${context}`;
+          const sent = await sendWhatsAppMessage(primaryContact.phone, `Hey, this is GENI. ${alert}`);
+          if (sent) {
+            addActivity(`Alert sent to ${primaryContact.name}: Missed medication`, 'system');
+            lastMedicationAlertAt.set(alertKey, Date.now());
+          }
         }
       }
     }
@@ -95,13 +139,19 @@ export async function proactiveHealthCheck() {
     setTimeout(async () => {
       const stillNoActivity = !state.activities.find(a => a.timestamp > Date.now() - 5 * 60 * 1000);
       if (stillNoActivity) {
+        if (lastNoActivityAlertAt && Date.now() - lastNoActivityAlertAt < NO_ACTIVITY_ALERT_COOLDOWN_MS) {
+          return;
+        }
         const primaryContact = state.contacts.find(c => c.isPrimary);
         if (primaryContact) {
-          await sendWhatsAppMessage(
+          const sent = await sendWhatsAppMessage(
             primaryContact.phone,
             `Hey, this is GENI. No activity from ${state.patient.name} in 2+ hours. Please check in when possible.`
           );
-          addActivity(`Alert sent to ${primaryContact.name}: No recent activity`, 'system');
+          if (sent) {
+            addActivity(`Alert sent to ${primaryContact.name}: No recent activity`, 'system');
+            lastNoActivityAlertAt = Date.now();
+          }
         }
       }
     }, 5 * 60 * 1000);
@@ -143,8 +193,10 @@ Overall: ${state.patient.name} is doing well! Keep up the great work.
 
 - GENI 🐾`;
 
-  await sendWhatsAppMessage(primaryContact.phone, summary);
-  addActivity(`Weekly summary sent to ${primaryContact.name}`, 'system');
+  const sent = await sendWhatsAppMessage(primaryContact.phone, summary);
+  if (sent) {
+    addActivity(`Weekly summary sent to ${primaryContact.name}`, 'system');
+  }
 }
 
 export function shouldTriggerProactiveAction(): { action: string; message: string } | null {

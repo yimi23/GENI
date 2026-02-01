@@ -24,6 +24,7 @@ import trainingRouter from './routes/training';
 import monitoringRouter from './routes/monitoring';
 import fallDetectionRouter from './routes/fall-detection';
 import visionStreamRouter from './routes/vision-stream';
+import yoloEmergencyRouter from './routes/yolo-emergency';
 
 const app = express();
 const server = http.createServer(app);
@@ -35,12 +36,16 @@ initializeSocket(server);
 initializeScheduler();
 
 // Initialize Fall Detection (continuous monitoring)
-fallDetectionService.start({
-  patient: config.patient.name,
-  camera: 0,
-  headless: true, // No window in production
-});
-console.log('🚨 Fall detection started (YOLO pose estimation)');
+if (config.fallDetection.enabled && config.fallDetection.mode === 'camera') {
+  fallDetectionService.start({
+    patient: config.patient.name,
+    camera: 0,
+    headless: true, // No window in production
+  });
+  console.log('🚨 Fall detection started (YOLO pose estimation)');
+} else {
+  console.log('⚠️  Fall detection camera process disabled (using frame pipeline or disabled)');
+}
 
 // Middleware
 app.use(cors());
@@ -65,6 +70,7 @@ app.use('/api', ttsRouter);
 app.use('/api', trainingRouter);
 app.use('/api', monitoringRouter);
 app.use('/api', visionStreamRouter);
+app.use('/api/yolo', yoloEmergencyRouter);
 
 // Health check
 app.get('/health', (req, res) => {

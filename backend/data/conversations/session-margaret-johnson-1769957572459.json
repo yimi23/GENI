@@ -1,0 +1,14 @@
+[
+  {
+    "id": "msg-1769957572459-jghdmr0pz",
+    "sessionId": "session-margaret-johnson-1769957572459",
+    "timestamp": "2026-02-01T14:52:52.459Z",
+    "role": "geni",
+    "type": "text",
+    "content": "Hey Margaret! I see you there, but can't quite spot your pill organizer. It's morning and your blood pressure med isn't due until 2pm - everything okay?",
+    "metadata": {
+      "timeOfDay": "morning",
+      "visionSnapshot": "Analysis unavailable | activity: unclear | pillStatus: unclear"
+    }
+  }
+]

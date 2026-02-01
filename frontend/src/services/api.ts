@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const API_URL = (import.meta.env as Record<string, any>).VITE_API_URL || 'http://localhost:5001';
 
 // Helper function to add timeout to fetch
 async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs: number = 30000) {
@@ -19,6 +19,21 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
     }
     throw error;
   }
+}
+
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('Failed to convert blob to base64'));
+      }
+    };
+    reader.onerror = () => reject(reader.error || new Error('FileReader error'));
+    reader.readAsDataURL(blob);
+  });
 }
 
 export const api = {
@@ -63,15 +78,14 @@ export const api = {
 
   // Check pills via camera
   async checkPills(imageBlob: Blob) {
-    const formData = new FormData();
-    formData.append('image', imageBlob, 'pills.jpg');
-    
+    const image = await blobToDataUrl(imageBlob);
     console.log('🔍 API: Sending pill check request...');
     const response = await fetchWithTimeout(
-      `${API_URL}/api/pill-check`,
+      `${API_URL}/api/vision/analyze`,
       {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image, source: 'manual' }),
       },
       30000 // 30 second timeout for Vision API
     );
@@ -84,7 +98,7 @@ export const api = {
     
     const result = await response.json();
     console.log('✅ API: Pill check response:', result);
-    return result;
+    return result.pillCheck ? { ...result.pillCheck.result, ...result.pillCheck, fallPose: result.fallPose } : result;
   },
 
   // Send WhatsApp message

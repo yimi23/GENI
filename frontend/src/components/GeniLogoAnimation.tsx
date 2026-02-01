@@ -9,12 +9,10 @@ export function GeniLogoAnimation({ onComplete }: GeniLogoAnimationProps) {
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    // Start fade out after logo has been displayed
     const fadeTimer = setTimeout(() => {
       setFadeOut(true);
     }, 3000);
 
-    // Call onComplete after fade out finishes
     const completeTimer = setTimeout(() => {
       onComplete?.();
     }, 3800);
@@ -80,13 +78,13 @@ export function GeniLogoAnimation({ onComplete }: GeniLogoAnimationProps) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{
             duration: 1,
-            ease: [0.16, 1, 0.3, 1], // Custom easing for smooth entrance
+            ease: [0.16, 1, 0.3, 1],
           }}
         >
           <motion.img
-            src="/geni-logo-v2.png"
+            src="/geni-logo.png"
             alt="GENI Healthcare Assistant"
-            className="w-[500px] h-auto"
+            className="w-80 h-auto"
             animate={{
               y: [0, -8, 0],
             }}

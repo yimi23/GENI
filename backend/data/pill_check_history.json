@@ -1,6 +1,606 @@
 {
   "records": [
     {
+      "id": "1769965164266-53g2xqs4o",
+      "timestamp": 1769965164266,
+      "date": "2/1/2026",
+      "time": "11:59 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses taking a mirror selfie in a facility with exposed ceiling and fluorescent lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769964832280-gq3befoos",
+      "timestamp": 1769964832280,
+      "date": "2/1/2026",
+      "time": "11:53 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: person wearing glasses in an open office or workspace with ceiling lights and workstations visible",
+      "method": "vision"
+    },
+    {
+      "id": "1769964811498-qwis9q73v",
+      "timestamp": 1769964811498,
+      "date": "2/1/2026",
+      "time": "11:53 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, sitting in a bright room with fluorescent ceiling lights and office furniture in background",
+      "method": "vision"
+    },
+    {
+      "id": "1769964792905-z80vmw1mq",
+      "timestamp": 1769964792906,
+      "date": "2/1/2026",
+      "time": "11:53 AM",
+      "status": "present",
+      "confidence": "high",
+      "observations": "7-day pill organizer with all compartments full. Each day contains approximately 4 pills in pastel colors (white, blue, pink). No medications have been taken yet this week.",
+      "method": "vision"
+    },
+    {
+      "id": "1769964768539-2oqo3ogwz",
+      "timestamp": 1769964768539,
+      "date": "2/1/2026",
+      "time": "11:52 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an interior space with exposed ceiling ducts and fluorescent lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769964533462-trk7bgyn7",
+      "timestamp": 1769964533462,
+      "date": "2/1/2026",
+      "time": "11:48 AM",
+      "status": "present",
+      "confidence": "high",
+      "observations": "7-day pill organizer visible. All compartments full with approximately 4 multicolored pills/tablets (white, blue, and pink/peach colored). No medications taken this week.",
+      "method": "vision"
+    },
+    {
+      "id": "1769964253700-rnsajc1dx",
+      "timestamp": 1769964253700,
+      "date": "2/1/2026",
+      "time": "11:44 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: person wearing glasses in an office or workspace with open ceiling and many chairs",
+      "method": "vision"
+    },
+    {
+      "id": "1769964214453-424my5ocf",
+      "timestamp": 1769964214453,
+      "date": "2/1/2026",
+      "time": "11:43 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an office or workspace with fluorescent lighting and exposed ceiling infrastructure",
+      "method": "vision"
+    },
+    {
+      "id": "1769964205450-357pik6m4",
+      "timestamp": 1769964205450,
+      "date": "2/1/2026",
+      "time": "11:43 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an office or workspace with exposed ceiling and fluorescent lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769964082074-w1tx5qyqj",
+      "timestamp": 1769964082074,
+      "date": "2/1/2026",
+      "time": "11:41 AM",
+      "status": "present",
+      "confidence": "high",
+      "observations": "7-day pill organizer with all compartments full. Each day contains approximately 5 mixed color pills (white, pink, blue pastel tablets/capsules). No medications taken this week.",
+      "method": "vision"
+    },
+    {
+      "id": "1769964064255-ca6bgikhh",
+      "timestamp": 1769964064255,
+      "date": "2/1/2026",
+      "time": "11:41 AM",
+      "status": "present",
+      "confidence": "high",
+      "observations": "7-day pill organizer visible. All compartments full with approximately 6 pills each in pastel colors (white, blue, pink). No medications taken this week.",
+      "method": "vision"
+    },
+    {
+      "id": "1769964048027-wtvqom16n",
+      "timestamp": 1769964048027,
+      "date": "2/1/2026",
+      "time": "11:40 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, located in an indoor space with fluorescent lighting and exposed ceiling",
+      "method": "vision"
+    },
+    {
+      "id": "1769964016027-w3cyhoq14",
+      "timestamp": 1769964016027,
+      "date": "2/1/2026",
+      "time": "11:40 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an office or workspace with fluorescent lighting and exposed ceiling infrastructure",
+      "method": "vision"
+    },
+    {
+      "id": "1769964005109-0cw21h8y2",
+      "timestamp": 1769964005109,
+      "date": "2/1/2026",
+      "time": "11:40 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, in an office or workplace with fluorescent ceiling lighting and open workspace in background",
+      "method": "vision"
+    },
+    {
+      "id": "1769963995175-erk1kvjk8",
+      "timestamp": 1769963995175,
+      "date": "2/1/2026",
+      "time": "11:39 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an office or workspace with overhead lighting and exposed ceiling infrastructure",
+      "method": "vision"
+    },
+    {
+      "id": "1769963822400-eu0tevogv",
+      "timestamp": 1769963822400,
+      "date": "2/1/2026",
+      "time": "11:37 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an indoor setting with exposed ceiling and lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769963804366-u6v8oyg24",
+      "timestamp": 1769963804366,
+      "date": "2/1/2026",
+      "time": "11:36 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an office or workspace with exposed ceiling and fluorescent lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769963595904-b2434xyik",
+      "timestamp": 1769963595904,
+      "date": "2/1/2026",
+      "time": "11:33 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, located in an office or workspace with overhead lighting and exposed ceiling infrastructure",
+      "method": "vision"
+    },
+    {
+      "id": "1769963188928-icy7iwa7y",
+      "timestamp": 1769963188928,
+      "date": "2/1/2026",
+      "time": "11:26 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "Error: 401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"},\"request_id\":\"req_011CXhfMaimykA5LxxeeH5Wc\"}",
+      "method": "vision"
+    },
+    {
+      "id": "1769963182810-iyywg4zen",
+      "timestamp": 1769963182810,
+      "date": "2/1/2026",
+      "time": "11:26 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "Error: 401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"},\"request_id\":\"req_011CXhfM8zhtNEp8823ZmYcZ\"}",
+      "method": "vision"
+    },
+    {
+      "id": "1769962784984-46p1viu4l",
+      "timestamp": 1769962784984,
+      "date": "2/1/2026",
+      "time": "11:19 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "Error: 401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"},\"request_id\":\"req_011CXheqpNDijKKSc9tC6kPY\"}",
+      "method": "vision"
+    },
+    {
+      "id": "1769962670473-3kuk9fict",
+      "timestamp": 1769962670473,
+      "date": "2/1/2026",
+      "time": "11:17 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "Error: 401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"},\"request_id\":\"req_011CXhehNkP3ZUPMJyNr7489\"}",
+      "method": "vision"
+    },
+    {
+      "id": "1769962606949-4niqkz5kb",
+      "timestamp": 1769962606949,
+      "date": "2/1/2026",
+      "time": "11:16 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "Error: 401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"},\"request_id\":\"req_011CXhechCG4cs6GKYJVfNbu\"}",
+      "method": "vision"
+    },
+    {
+      "id": "1769962598682-yx885accp",
+      "timestamp": 1769962598682,
+      "date": "2/1/2026",
+      "time": "11:16 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "Error: 401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"},\"request_id\":\"req_011CXhec5g5WNsx1tN1Un3xW\"}",
+      "method": "vision"
+    },
+    {
+      "id": "1769961361157-409pj5cna",
+      "timestamp": 1769961361157,
+      "date": "2/1/2026",
+      "time": "10:56 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, light colored shirt, standing under industrial-style ceiling with exposed pipes and lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769961346435-z6g2mgjoi",
+      "timestamp": 1769961346435,
+      "date": "2/1/2026",
+      "time": "10:55 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, in an interior space with exposed ceiling pipes and lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769961329647-11q2djuab",
+      "timestamp": 1769961329647,
+      "date": "2/1/2026",
+      "time": "10:55 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, white shirt with graphic, standing in room with fluorescent lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769961282742-6pwn3dp2b",
+      "timestamp": 1769961282742,
+      "date": "2/1/2026",
+      "time": "10:54 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: person in white sweater sitting in an office or classroom environment with tables, chairs, and overhead fluorescent lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769960999348-yf7win1e4",
+      "timestamp": 1769960999348,
+      "date": "2/1/2026",
+      "time": "10:49 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, standing in front of a whiteboard with 'Party Game' written in red marker",
+      "method": "vision"
+    },
+    {
+      "id": "1769960765786-5kkrmjdsx",
+      "timestamp": 1769960765786,
+      "date": "2/1/2026",
+      "time": "10:46 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, standing in front of a whiteboard with 'Party Game' text written in red marker",
+      "method": "vision"
+    },
+    {
+      "id": "1769960388024-6mnbg77p9",
+      "timestamp": 1769960388024,
+      "date": "2/1/2026",
+      "time": "10:39 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, sitting in front of a whiteboard with 'Party Game' written in red marker",
+      "method": "vision"
+    },
+    {
+      "id": "1769959977860-7mdbdkl4q",
+      "timestamp": 1769959977860,
+      "date": "2/1/2026",
+      "time": "10:32 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, standing in front of a whiteboard with handwritten red text that says 'Party Game'",
+      "method": "vision"
+    },
+    {
+      "id": "1769959701194-k4wvs58kj",
+      "timestamp": 1769959701194,
+      "date": "2/1/2026",
+      "time": "10:28 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, standing in front of a whiteboard with handwritten 'Party Game' text",
+      "method": "vision"
+    },
+    {
+      "id": "1769959196222-w8nyctcpp",
+      "timestamp": 1769959196222,
+      "date": "2/1/2026",
+      "time": "10:19 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, seated in front of a whiteboard with 'Party' and musical notes written on it",
+      "method": "vision"
+    },
+    {
+      "id": "1769959172723-9uqs0wkpv",
+      "timestamp": 1769959172723,
+      "date": "2/1/2026",
+      "time": "10:19 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, standing in front of a whiteboard with 'Party' and other text written in red marker",
+      "method": "vision"
+    },
+    {
+      "id": "1769958835887-36y5duews",
+      "timestamp": 1769958835887,
+      "date": "2/1/2026",
+      "time": "10:13 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, seated in front of whiteboard with 'Party' and decorative text written in red marker, disco ball visible in background",
+      "method": "vision"
+    },
+    {
+      "id": "1769958816746-alz7ysykl",
+      "timestamp": 1769958816746,
+      "date": "2/1/2026",
+      "time": "10:13 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, standing in front of a white board with string lights and handwritten text about 'Party Game'",
+      "method": "vision"
+    },
+    {
+      "id": "1769958449830-olxmag13p",
+      "timestamp": 1769958449830,
+      "date": "2/1/2026",
+      "time": "10:07 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: person in white sweater standing in an office or workspace with overhead fluorescent lighting, chairs, and desks visible in background",
+      "method": "vision"
+    },
+    {
+      "id": "1769958425574-eovj5pwr7",
+      "timestamp": 1769958425574,
+      "date": "2/1/2026",
+      "time": "10:07 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses and white sweatshirt with cartoon monkey graphic",
+      "method": "vision"
+    },
+    {
+      "id": "1769958200581-bl17l2g04",
+      "timestamp": 1769958200581,
+      "date": "2/1/2026",
+      "time": "10:03 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: person wearing glasses taking a photo in an office or classroom space with tables, chairs, and overhead lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769958108212-li1rgkv3o",
+      "timestamp": 1769958108212,
+      "date": "2/1/2026",
+      "time": "10:01 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an indoor setting with industrial-style ceiling and lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769958084223-ywitg256e",
+      "timestamp": 1769958084223,
+      "date": "2/1/2026",
+      "time": "10:01 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, standing in an interior space with exposed ceiling and industrial lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769957937098-zqkf1a90y",
+      "timestamp": 1769957937098,
+      "date": "2/1/2026",
+      "time": "9:58 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an indoor setting with overhead lighting and exposed ceiling infrastructure",
+      "method": "vision"
+    },
+    {
+      "id": "1769957803429-bvmrdd38k",
+      "timestamp": 1769957803429,
+      "date": "2/1/2026",
+      "time": "9:56 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an indoor setting with exposed ceiling and lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769957688669-butjqpimf",
+      "timestamp": 1769957688669,
+      "date": "2/1/2026",
+      "time": "9:54 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an indoor setting with industrial ceiling and lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769957570791-egqfw6can",
+      "timestamp": 1769957570791,
+      "date": "2/1/2026",
+      "time": "9:52 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, located in an indoor space with exposed ceiling and lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769957555660-i95ujssi3",
+      "timestamp": 1769957555660,
+      "date": "2/1/2026",
+      "time": "9:52 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an indoor setting with industrial-style ceiling and lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769957300514-cxpwo4h4s",
+      "timestamp": 1769957300514,
+      "date": "2/1/2026",
+      "time": "9:48 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, standing in an indoor space with industrial ceiling and lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769957290845-p4ngcl3di",
+      "timestamp": 1769957290845,
+      "date": "2/1/2026",
+      "time": "9:48 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an indoor space with industrial-style ceiling and lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769957267789-3wsr2r6xv",
+      "timestamp": 1769957267789,
+      "date": "2/1/2026",
+      "time": "9:47 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, seated in an indoor space with exposed ceiling and lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769956784678-3qfwxyxle",
+      "timestamp": 1769956784678,
+      "date": "2/1/2026",
+      "time": "9:39 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: person wearing white shirt in an indoor space with industrial-style exposed ceiling and fluorescent lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769956731534-bdii8f3pr",
+      "timestamp": 1769956731534,
+      "date": "2/1/2026",
+      "time": "9:38 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, making an exaggerated facial expression, located in what appears to be an indoor facility with exposed ceiling infrastructure and fluorescent lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769956715766-feov5bzwj",
+      "timestamp": 1769956715766,
+      "date": "2/1/2026",
+      "time": "9:38 AM",
+      "status": "present",
+      "confidence": "high",
+      "observations": "7-day pill organizer with all compartments full. Each day contains approximately 6 pills in pastel colors including white, light blue, and light pink.",
+      "method": "vision"
+    },
+    {
+      "id": "1769956698945-kdp0n6r1u",
+      "timestamp": 1769956698945,
+      "date": "2/1/2026",
+      "time": "9:38 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, standing in an indoor space with industrial-style ceiling and lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769956285712-7906oeymf",
+      "timestamp": 1769956285712,
+      "date": "2/1/2026",
+      "time": "9:31 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses in an indoor setting with exposed ceiling infrastructure and fluorescent lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769954320081-jo5uiddl7",
+      "timestamp": 1769954320081,
+      "date": "2/1/2026",
+      "time": "8:58 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, standing in an industrial or warehouse-like setting with exposed ceiling pipes and orange walls",
+      "method": "vision"
+    },
+    {
+      "id": "1769953957147-r44qkx042",
+      "timestamp": 1769953957147,
+      "date": "2/1/2026",
+      "time": "8:52 AM",
+      "status": "present",
+      "confidence": "high",
+      "observations": "7-day pill organizer visible with multi-colored pills (white, pink, light blue) in each compartment. All compartments appear full, suggesting no medications have been taken yet this week.",
+      "method": "vision"
+    },
+    {
+      "id": "1769953928106-ybzseo66h",
+      "timestamp": 1769953928106,
+      "date": "2/1/2026",
+      "time": "8:52 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, looking at camera in an indoor setting with fluorescent lighting",
+      "method": "vision"
+    },
+    {
+      "id": "1769953120645-9rjmp7xvn",
+      "timestamp": 1769953120645,
+      "date": "2/1/2026",
+      "time": "8:38 AM",
+      "status": "present",
+      "confidence": "high",
+      "observations": "7-day pill organizer visible. All compartments full with approximately 5-6 pastel-colored pills (white, blue, pink) per day. No medications appear to have been taken yet this week.",
+      "method": "vision"
+    },
+    {
+      "id": "1769953096698-zp44p1nyo",
+      "timestamp": 1769953096698,
+      "date": "2/1/2026",
+      "time": "8:38 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: human face wearing glasses, sitting in front of an orange and white background with a mechanical arm or object visible",
+      "method": "vision"
+    },
+    {
       "id": "1769951427394-aeu8qnwcs",
       "timestamp": 1769951427394,
       "date": "2/1/2026",
@@ -399,256 +999,16 @@
       "confidence": "low",
       "observations": "Error: 404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-sonnet-20240229\"},\"request_id\":\"req_011CXgmBgaR8jaSLyu8TMdU1\"}",
       "method": "vision"
-    },
-    {
-      "id": "1769922136146-kleu32gwk",
-      "timestamp": 1769922136146,
-      "date": "2/1/2026",
-      "time": "12:02 AM",
-      "status": "unclear",
-      "confidence": "low",
-      "observations": "Error: 404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-sonnet-20240229\"},\"request_id\":\"req_011CXgmBQfhVs7aAJRbqASBY\"}",
-      "method": "vision"
-    },
-    {
-      "id": "1769922109634-xljtco46e",
-      "timestamp": 1769922109634,
-      "date": "2/1/2026",
-      "time": "12:01 AM",
-      "status": "unclear",
-      "confidence": "low",
-      "observations": "Error: 404 {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-3-sonnet-20240229\"},\"request_id\":\"req_011CXgm9TamD2iejgfFCarA1\"}",
-      "method": "vision"
-    },
-    {
-      "id": "1769921811178-p3hkkjhlv",
-      "timestamp": 1769921811178,
-      "date": "1/31/2026",
-      "time": "11:56 PM",
-      "status": "unclear",
-      "confidence": "low",
-      "observations": "Error analyzing image",
-      "method": "vision"
-    },
-    {
-      "id": "1769921790851-zuitfgeyp",
-      "timestamp": 1769921790851,
-      "date": "1/31/2026",
-      "time": "11:56 PM",
-      "status": "unclear",
-      "confidence": "low",
-      "observations": "Error analyzing image",
-      "method": "vision"
-    },
-    {
-      "id": "1769921785420-osnf6ts6i",
-      "timestamp": 1769921785421,
-      "date": "1/31/2026",
-      "time": "11:56 PM",
-      "status": "unclear",
-      "confidence": "low",
-      "observations": "Error analyzing image",
-      "method": "vision"
-    },
-    {
-      "id": "1769921737716-26tcubwta",
-      "timestamp": 1769921737716,
-      "date": "1/31/2026",
-      "time": "11:55 PM",
-      "status": "unclear",
-      "confidence": "low",
-      "observations": "Error analyzing image",
-      "method": "vision"
-    },
-    {
-      "id": "1769921678183-2t0q2yinj",
-      "timestamp": 1769921678183,
-      "date": "1/31/2026",
-      "time": "11:54 PM",
-      "status": "unclear",
-      "confidence": "low",
-      "observations": "Error analyzing image",
-      "method": "vision"
-    },
-    {
-      "id": "1769920796871-x59uf17o4",
-      "timestamp": 1769920796871,
-      "date": "1/31/2026",
-      "time": "11:39 PM",
-      "status": "unclear",
-      "confidence": "low",
-      "observations": "Error analyzing image",
-      "method": "vision"
-    },
-    {
-      "id": "1769920790168-2ejai08yu",
-      "timestamp": 1769920790168,
-      "date": "1/31/2026",
-      "time": "11:39 PM",
-      "status": "unclear",
-      "confidence": "low",
-      "observations": "Error analyzing image",
-      "method": "vision"
-    },
-    {
-      "id": "1769917948431-psxbsize0",
-      "timestamp": 1769917948431,
-      "date": "1/31/2026",
-      "time": "10:52 PM",
-      "status": "present",
-      "confidence": "high",
-      "observations": "The image shows a pill organizer with compartments labeled for each day of the week. The compartments for the current day (Thursday) appear to be full, indicating the pills for that day have not been taken yet.",
-      "method": "vision"
-    },
-    {
-      "id": "1769917934018-umngnx8mw",
-      "timestamp": 1769917934018,
-      "date": "1/31/2026",
-      "time": "10:52 PM",
-      "status": "unclear",
-      "confidence": "low",
-      "observations": "Error analyzing image",
-      "method": "vision"
-    },
-    {
-      "id": "1769917722758-4xv54p54f",
-      "timestamp": 1769917722758,
-      "date": "1/31/2026",
-      "time": "10:48 PM",
-      "status": "present",
-      "confidence": "high",
-      "observations": "The pill organizer contains pills in each compartment, indicating the medications for the current time period have not been taken yet.",
-      "method": "vision"
-    },
-    {
-      "id": "1769917688036-gxf0u0t43",
-      "timestamp": 1769917688036,
-      "date": "1/31/2026",
-      "time": "10:48 PM",
-      "status": "unclear",
-      "confidence": "low",
-      "observations": "Error analyzing image",
-      "method": "vision"
-    },
-    {
-      "id": "1769917521842-56mg3c2um",
-      "timestamp": 1769917521842,
-      "date": "1/31/2026",
-      "time": "10:45 PM",
-      "status": "unclear",
-      "confidence": "low",
-      "observations": "Error analyzing image",
-      "method": "vision"
-    },
-    {
-      "id": "1769917438207-irhn1b8nn",
-      "timestamp": 1769917438207,
-      "date": "1/31/2026",
-      "time": "10:43 PM",
-      "status": "present",
-      "confidence": "high",
-      "observations": "The image shows a weekly pill organizer with compartments labeled for each day of the week. The compartments appear to be filled with various colored pills, suggesting the medications for the current time period are still present and have not been taken.",
-      "method": "vision"
-    },
-    {
-      "id": "1769917320515-uwvjfcl0e",
-      "timestamp": 1769917320515,
-      "date": "1/31/2026",
-      "time": "10:42 PM",
-      "status": "present",
-      "confidence": "high",
-      "observations": "The image shows a pill organizer with compartments labeled for each day of the week. All compartments appear to be filled with pills, indicating the medications for the current time period have not been taken yet.",
-      "method": "vision"
-    },
-    {
-      "id": "1769917206547-oj9cku54h",
-      "timestamp": 1769917206547,
-      "date": "1/31/2026",
-      "time": "10:40 PM",
-      "status": "present",
-      "confidence": "high",
-      "observations": "The image shows a weekly pill organizer with compartments labeled for each day of the week. The compartments appear to be filled with various colorful pills or capsules, indicating that the medications for the current time period have not been taken.",
-      "method": "vision"
-    },
-    {
-      "id": "1769916981452-d5uth7hi2",
-      "timestamp": 1769916981452,
-      "date": "1/31/2026",
-      "time": "10:36 PM",
-      "status": "present",
-      "confidence": "high",
-      "observations": "The pill organizer contains pills in each of the day compartments, indicating that the pills for the current time period are still present and have not been taken.",
-      "method": "vision"
-    },
-    {
-      "id": "1769916977054-mmd96w5yd",
-      "timestamp": 1769916977054,
-      "date": "1/31/2026",
-      "time": "10:36 PM",
-      "status": "present",
-      "confidence": "high",
-      "observations": "The image shows a weekly pill organizer with compartments labeled for each day of the week. All the compartments appear to be filled with various pills and capsules, indicating the medications for the current time period have not been taken yet.",
-      "method": "vision"
-    },
-    {
-      "id": "1769916854721-kedu09cez",
-      "timestamp": 1769916854722,
-      "date": "1/31/2026",
-      "time": "10:34 PM",
-      "status": "present",
-      "confidence": "high",
-      "observations": "The image shows a weekly pill organizer with compartments labeled for each day of the week. All compartments appear to be filled with various colored pills, suggesting the pills for the current time period are still present and have not been taken.",
-      "method": "vision"
-    },
-    {
-      "id": "1769914938470-0dw4wig2u",
-      "timestamp": 1769914938470,
-      "date": "1/31/2026",
-      "time": "10:02 PM",
-      "status": "present",
-      "confidence": "high",
-      "observations": "The image shows a pill organizer with compartments for each day of the week. All compartments appear to be filled with various colored pills, indicating the pills for the current time period are still present and have not been taken.",
-      "method": "vision"
-    },
-    {
-      "id": "1769914760971-svv7uigke",
-      "timestamp": 1769914760971,
-      "date": "1/31/2026",
-      "time": "9:59 PM",
-      "status": "present",
-      "confidence": "high",
-      "observations": "The image shows a pill organizer with compartments labeled for each day of the week. All compartments appear to be filled with various colored pills, suggesting the pills for the current time period are still present and have not been taken.",
-      "method": "vision"
-    },
-    {
-      "id": "1769914709451-ton09o5sz",
-      "timestamp": 1769914709451,
-      "date": "1/31/2026",
-      "time": "9:58 PM",
-      "status": "present",
-      "confidence": "high",
-      "observations": "The image shows a pill organizer with compartments labeled for each day of the week. The compartments appear to be filled with pills, indicating that the medications for the current time period are still present and have not been taken.",
-      "method": "vision"
-    },
-    {
-      "id": "1769914703174-zc3k1kn3t",
-      "timestamp": 1769914703174,
-      "date": "1/31/2026",
-      "time": "9:58 PM",
-      "status": "present",
-      "confidence": "high",
-      "observations": "The image shows a pill organizer with 8 compartments, and each compartment appears to contain pills or capsules of various shapes and colors.",
-      "method": "vision"
     }
   ],
   "lastCheck": {
-    "id": "1769951427394-aeu8qnwcs",
-    "timestamp": 1769951427394,
+    "id": "1769965164266-53g2xqs4o",
+    "timestamp": 1769965164266,
     "date": "2/1/2026",
-    "time": "8:10 AM",
+    "time": "11:59 AM",
     "status": "unclear",
     "confidence": "low",
-    "observations": "No pill organizer detected. Image shows: person wearing glasses with a large scissors or cutting tool partially visible above their head, against an orange and white striped background",
+    "observations": "No pill organizer detected. Image shows: human face wearing glasses taking a mirror selfie in a facility with exposed ceiling and fluorescent lighting",
     "method": "vision"
   }
 }

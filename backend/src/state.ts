@@ -4,6 +4,28 @@ import { Activity, createActivity } from './models/Activity';
 import { Reminder } from './models/Reminder';
 import { config } from './config';
 
+interface PillCheckResult {
+  timestamp: Date;
+  status: 'taken' | 'present' | 'unclear';
+  observations: string;
+  compartments?: Record<string, string>;
+  confidence: string;
+}
+
+interface FamilyMessage {
+  id: string;
+  senderName: string;
+  message: string;
+  timestamp: Date;
+  read: boolean;
+}
+
+interface YOLOEmergency {
+  type: 'fall' | 'desk_faint' | 'unresponsive';
+  timestamp: Date;
+  acknowledged: boolean;
+}
+
 interface AppState {
   patient: Patient;
   contacts: Contact[];
@@ -11,6 +33,10 @@ interface AppState {
   medicationHistory: MedicationHistory[];
   activities: Activity[];
   reminders: Reminder[];
+  pillCheckResults: PillCheckResult[];
+  familyMessages: FamilyMessage[];
+  lastEmergency?: YOLOEmergency;
+  emergencyTriggeredAt?: Date;
   hardwareStatus: {
     online: boolean;
     leds: {
@@ -153,6 +179,10 @@ export const state: AppState = {
     },
   ],
   
+  pillCheckResults: [],
+  
+  familyMessages: [],
+  
   hardwareStatus: {
     online: true,
     leds: {
@@ -186,6 +216,34 @@ export function updateMedicationStatus(medicationName: string, status: Medicatio
     return true;
   }
   return false;
+}
+
+export function addPillCheckResult(result: Omit<PillCheckResult, 'timestamp'>) {
+  state.pillCheckResults.push({
+    ...result,
+    timestamp: new Date(),
+  });
+  // Keep only last 50 results
+  if (state.pillCheckResults.length > 50) {
+    state.pillCheckResults.shift();
+  }
+}
+
+export function addFamilyMessage(senderName: string, message: string) {
+  state.familyMessages.push({
+    id: `${Date.now()}-${Math.random()}`,
+    senderName,
+    message,
+    timestamp: new Date(),
+    read: false,
+  });
+}
+
+export function markFamilyMessageAsRead(messageId: string) {
+  const msg = state.familyMessages.find(m => m.id === messageId);
+  if (msg) {
+    msg.read = true;
+  }
 }
 
 export function getPrimaryContact(): Contact | undefined {

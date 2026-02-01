@@ -1,0 +1,14 @@
+[
+  {
+    "id": "msg-1769964833661-r46ey89mk",
+    "sessionId": "session-margaret-johnson-1769964833659",
+    "timestamp": "2026-02-01T16:53:53.661Z",
+    "role": "geni",
+    "type": "text",
+    "content": "Hey Margaret, I see you in what looks like an office, but I can't spot your pill organizer. Did you take your blood pressure med today?",
+    "metadata": {
+      "timeOfDay": "morning",
+      "visionSnapshot": "A person wearing glasses and a cream-colored sweater is leaning forward in an open workspace with fluorescent lighting and multiple desks/workstations visible in background | activity: at desk | pillStatus: unclear"
+    }
+  }
+]

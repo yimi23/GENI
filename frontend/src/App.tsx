@@ -5,6 +5,7 @@ import { MedicationHistory } from './components/history/MedicationHistory';
 import TrainingMode from './components/TrainingMode';
 import { FallDetectionModal } from './components/modals/FallDetectionModal';
 import { IncomingMessageBanner } from './components/modals/IncomingMessageBanner';
+import { EmergencyAlert } from './components/EmergencyAlert';
 import { GeniLogoAnimation } from './components/GeniLogoAnimation';
 import { useStatus } from './hooks/useStatus';
 import { useSocketEvent } from './hooks/useSocket';
@@ -22,6 +23,7 @@ export default function App() {
   const { data, loading, refresh } = useStatus();
   const [currentView, setCurrentView] = useState<View>(isTrainingMode ? 'training' : 'chat');
   const [showFallModal, setShowFallModal] = useState(false);
+  const [fallIncidentId, setFallIncidentId] = useState<string | null>(null);
   const [incomingMessage, setIncomingMessage] = useState<IncomingMessage | null>(null);
 
   // Socket event listeners
@@ -42,6 +44,13 @@ export default function App() {
   });
 
   useSocketEvent('fall_detected', () => {
+    setShowFallModal(true);
+  });
+  
+  useSocketEvent<{ state: string; data?: { incidentId?: string } }>('fall_alert', (payload) => {
+    if (payload?.data?.incidentId) {
+      setFallIncidentId(payload.data.incidentId);
+    }
     setShowFallModal(true);
   });
 
@@ -95,6 +104,9 @@ export default function App() {
 
   return (
     <>
+      {/* Emergency Alert Overlay */}
+      <EmergencyAlert />
+
       {/* Incoming Message Banner */}
       {incomingMessage && (
         <IncomingMessageBanner
@@ -138,6 +150,7 @@ export default function App() {
       {/* Fall Detection Modal */}
       <FallDetectionModal
         isOpen={showFallModal}
+        incidentId={fallIncidentId}
         onClose={() => setShowFallModal(false)}
       />
     </>

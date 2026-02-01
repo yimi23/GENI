@@ -5,6 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import { continuousVision } from '../services/continuous-vision';
+import { runVisionPipeline } from '../services/vision-pipeline';
 
 const router = Router();
 
@@ -20,32 +21,33 @@ router.post('/vision/analyze', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'No image provided' });
     }
     
-    // Check if paused
-    if (continuousVision.isPausedStatus()) {
+    // Extract base64 data (remove data:image/jpeg;base64, prefix if present)
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+    
+    const source = req.body.source === 'manual' ? 'manual' : 'continuous';
+    
+    // Check if paused (only for continuous monitoring)
+    if (source === 'continuous' && continuousVision.isPausedStatus()) {
       return res.json({
         status: 'paused',
         message: 'Vision monitoring is paused (voice interaction active)',
       });
     }
     
-    // Extract base64 data (remove data:image/jpeg;base64, prefix if present)
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-    
-    // Analyze frame
-    const analysis = await continuousVision.analyzeFrame(base64Data);
-    
-    // Process and generate contextual output
-    await continuousVision.processAnalysis(analysis);
+    // Analyze frame with unified pipeline
+    const pipeline = await runVisionPipeline(base64Data, { source });
     
     // Return analysis
     res.json({
       status: 'success',
-      timestamp: analysis.timestamp,
-      observations: analysis.observations,
-      activity: analysis.activity,
-      pillStatus: analysis.pillStatus,
-      concerns: analysis.concerns,
-      message: analysis.contextualMessage,
+      timestamp: pipeline.vision.timestamp,
+      observations: pipeline.vision.observations,
+      activity: pipeline.vision.activity,
+      pillStatus: pipeline.vision.pillStatus,
+      concerns: pipeline.vision.concerns,
+      message: pipeline.visionMessage,
+      pillCheck: pipeline.pillCheck,
+      fallPose: pipeline.fallPose,
     });
     
   } catch (error: any) {

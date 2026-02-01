@@ -71,6 +71,28 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
   const cameraInitializedRef = useRef(false);
   const micInitializedRef = useRef(false);
   const recorderControls = useVoiceVisualizer();
+
+  const toggleAutoMonitoring = () => {
+    if (isMonitoring) {
+      stopMonitoring();
+      return;
+    }
+    if (visionActive) {
+      stopVision();
+    }
+    startMonitoring();
+  };
+
+  const toggleVisionMonitoring = () => {
+    if (visionActive) {
+      stopVision();
+      return;
+    }
+    if (isMonitoring) {
+      stopMonitoring();
+    }
+    startVision();
+  };
   
   // Continuous monitoring hook (OLD - will be replaced by continuous vision)
   const {
@@ -86,17 +108,20 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
     minIntervalMs: 10000,
   });
   
-  // NEW: Continuous vision hook (5-second intervals, always running)
+  // NEW: Continuous vision hook (30-second intervals, disabled by default to avoid conflicts with voice)
   const {
     isActive: visionActive,
-    isPaused: visionPaused,
-    lastUpdate: visionUpdate,
-    isProcessing: visionProcessing,
+    isPaused: _visionPaused,
+    lastUpdate: _visionUpdate,
+    lastFallPose,
+    isProcessing: _visionProcessing,
+    start: startVision,
+    stop: stopVision,
     pause: pauseVision,
     resume: resumeVision,
   } = useContinuousVision(videoRef, {
-    enabled: true, // Auto-start
-    intervalSeconds: 5, // Analyze every 5 seconds
+    enabled: false, // DISABLED by default - user can opt-in with button
+    intervalSeconds: 30, // Balanced for responsiveness
   });
   
   // NO AUTO-SAVE - causes race conditions with manual saves
@@ -141,6 +166,7 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
           wasSpoken: true // Mark as spoken to avoid double-speaking
         };
         
+        const updated = [...currentMessages, geniMessage];
         console.log('✅ Message added, total messages:', updated.length);
         
         // Speak the message (contextual autonomy in action!)
@@ -305,6 +331,8 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
     setIsCheckingPills(true);
     setLastInteractionWasVoice(triggeredByVoice);
     
+    // Manual checks run immediately for responsiveness
+    
     // NO hardcoded messages - let GENI brain handle everything
     try {
       console.log('📸 Capturing image from video...');
@@ -320,31 +348,39 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
       console.log(`✅ API response received in ${elapsed}s:`, result);
       
       // Use GENI brain-generated contextual response (no more hardcoded responses!)
-      const responseText = result.responseText || 'Let me check that for you...';
+      const fallAction = result.fallPose?.emergencyTriggered || result.fallPose?.fallPrimed;
+      const suppressPillResponse = result.suppressed || fallAction;
+      const responseText = fallAction
+        ? 'Fall detected. Help will be called soon unless cancelled.'
+        : (suppressPillResponse ? '' : (result.responseText || ''));
       
       console.log('💬 Adding result message:', responseText);
       
       // CRITICAL FIX: Force message display and TTS
-      const resultMessage: Message = {
-        sender: 'geni',
-        text: responseText,
-        time: getCurrentTime(),
-        wasSpoken: false
-      };
-      
-      // Add message via helper
-      addMessage(resultMessage);
-      console.log('💬 Message added');
+      if (responseText) {
+        const resultMessage: Message = {
+          sender: 'geni',
+          text: responseText,
+          time: getCurrentTime(),
+          wasSpoken: false
+        };
+        
+        // Add message via helper
+        addMessage(resultMessage);
+        console.log('💬 Message added');
+      }
       
       // CRITICAL: Set checking to false BEFORE speaking
       setIsCheckingPills(false);
       console.log('✅ Pill check complete, state updated');
       
-      // ALWAYS SPEAK for better UX - user needs to hear GENI's response
-      console.log('🔊 Speaking response via TTS');
-      ttsSpeak(responseText).catch(err => {
-        console.error('❌ TTS failed:', err);
-      });
+      if (responseText && !fallAction) {
+        // ALWAYS SPEAK for better UX - user needs to hear GENI's response
+        console.log('🔊 Speaking response via TTS');
+        ttsSpeak(responseText).catch(err => {
+          console.error('❌ TTS failed:', err);
+        });
+      }
       
     } catch (error) {
       console.error('❌ Pill check error:', error);
@@ -492,13 +528,27 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
     }
   };
 
-  // Debug: Log current state on every render
-  console.log('🔄 Render - messages.length:', messages.length, 'isCheckingPills:', isCheckingPills);
-
   const clearChat = () => {
     sessionStorage.removeItem('geni_messages');
     setMessages([]);
     console.log('🗑️ Chat cleared');
+  };
+
+  const cameraStatusLabel = isMonitoring
+    ? 'Auto Monitoring'
+    : visionActive
+      ? 'Vision Monitoring'
+      : 'Camera Active';
+
+  const cameraStatusDot = isMonitoring || visionActive ? 'bg-red-500 animate-pulse' : 'bg-green-500';
+  
+  const getMarkerStyle = (x?: number, y?: number) => {
+    if (!x && !y) return null;
+    if (!videoRef.current || !lastFallPose?.frameWidth || !lastFallPose?.frameHeight) return null;
+    const rect = videoRef.current.getBoundingClientRect();
+    const left = (x! / lastFallPose.frameWidth) * rect.width;
+    const top = (y! / lastFallPose.frameHeight) * rect.height;
+    return { left: `${left}px`, top: `${top}px` };
   };
 
   return (
@@ -542,30 +592,45 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
           {cameraActive && (
             <div className="absolute bottom-3 left-3 flex gap-2">
               <div className="text-white text-xs bg-black/60 px-2 py-1 rounded flex items-center gap-1">
-                <div className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></div>
-                {isMonitoring ? 'Auto Monitoring' : 'Camera Active'}
+                <div className={`w-2 h-2 rounded-full ${cameraStatusDot}`}></div>
+                {cameraStatusLabel}
               </div>
               <button
                 onClick={() => handleCheckPills(false)}
-                disabled={isCheckingPills || isMonitoring}
+                disabled={isCheckingPills || isMonitoring || visionActive}
                 className="text-white text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-3 py-1 rounded font-medium flex items-center gap-1 transition-colors"
+                title={visionActive ? 'Stop monitoring to check now' : undefined}
               >
                 <Camera size={12} />
                 {isCheckingPills ? 'Checking...' : 'Check Now'}
               </button>
-              <button
-                onClick={() => isMonitoring ? stopMonitoring() : startMonitoring()}
-                className={`text-white text-xs ${isMonitoring ? 'bg-red-600 hover:bg-red-700' : 'bg-purple-600 hover:bg-purple-700'} px-3 py-1 rounded font-medium flex items-center gap-1 transition-colors relative`}
-              >
-                {isMonitoring ? <PauseCircle size={12} /> : <PlayCircle size={12} />}
-                {isMonitoring ? 'Stop Auto' : 'Start Auto'}
-                {isMonitoring && (
-                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                  </span>
-                )}
-              </button>
+              <details className="relative">
+                <summary className="list-none text-white text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded font-medium flex items-center gap-1 transition-colors cursor-pointer select-none">
+                  <PlayCircle size={12} />
+                  Monitoring
+                </summary>
+                <div className="absolute left-0 mt-2 w-44 bg-black/80 backdrop-blur rounded-lg p-2 shadow-lg border border-white/10 z-10">
+                  <button
+                    onClick={toggleAutoMonitoring}
+                    className={`w-full text-left text-xs px-2 py-2 rounded flex items-center gap-2 ${
+                      isMonitoring ? 'bg-red-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'
+                    }`}
+                  >
+                    {isMonitoring ? <PauseCircle size={12} /> : <PlayCircle size={12} />}
+                    {isMonitoring ? 'Stop Auto' : 'Start Auto'}
+                  </button>
+                  <button
+                    onClick={toggleVisionMonitoring}
+                    className={`mt-1 w-full text-left text-xs px-2 py-2 rounded flex items-center gap-2 ${
+                      visionActive ? 'bg-red-600 text-white' : 'bg-white/10 text-white hover:bg-white/20'
+                    }`}
+                    title="Continuous vision analysis (30s intervals)"
+                  >
+                    {visionActive ? <PauseCircle size={12} /> : <PlayCircle size={12} />}
+                    {visionActive ? 'Stop Vision' : 'Start Vision'}
+                  </button>
+                </div>
+              </details>
               {isMonitoring && (
                 <div className="text-green-400 text-xs bg-black/40 px-2 py-1 rounded flex items-center gap-1">
                   <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
@@ -578,6 +643,37 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
                 </div>
               )}
             </div>
+          )}
+          {cameraActive && lastFallPose?.keypointsDetected && (
+            <>
+              <div className="absolute top-3 right-3 text-xs text-white bg-black/70 px-3 py-2 rounded-lg space-y-1">
+                <div className="font-semibold">Fall Pose Debug</div>
+                <div>Nose: {Math.round(lastFallPose.noseY || 0)}</div>
+                <div>Hip: {Math.round(lastFallPose.hipY || 0)}</div>
+                <div>Shoulder: {Math.round(lastFallPose.shoulderY || 0)}</div>
+                <div>Down: {lastFallPose.personDown ? 'yes' : 'no'}</div>
+                <div>Primed: {lastFallPose.fallPrimed ? 'yes' : 'no'}</div>
+                <div>Emergency: {lastFallPose.emergencyTriggered ? 'yes' : 'no'}</div>
+              </div>
+              {getMarkerStyle(lastFallPose.noseX, lastFallPose.noseY) && (
+                <div className="absolute w-3 h-3 rounded-full bg-cyan-400 border border-white"
+                  style={getMarkerStyle(lastFallPose.noseX, lastFallPose.noseY) as React.CSSProperties}
+                  title="Nose"
+                />
+              )}
+              {getMarkerStyle(lastFallPose.shoulderX, lastFallPose.shoulderY) && (
+                <div className="absolute w-3 h-3 rounded-full bg-yellow-400 border border-white"
+                  style={getMarkerStyle(lastFallPose.shoulderX, lastFallPose.shoulderY) as React.CSSProperties}
+                  title="Shoulders"
+                />
+              )}
+              {getMarkerStyle(lastFallPose.hipX, lastFallPose.hipY) && (
+                <div className="absolute w-3 h-3 rounded-full bg-red-400 border border-white"
+                  style={getMarkerStyle(lastFallPose.hipX, lastFallPose.hipY) as React.CSSProperties}
+                  title="Hips"
+                />
+              )}
+            </>
           )}
         </div>
 

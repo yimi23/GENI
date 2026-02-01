@@ -3,6 +3,8 @@ import { generateDailyReport, sendDailyReportToCaregiver } from '../services/rep
 import { sendWeeklySummaryToCaregiver } from '../services/proactive';
 import { generateContextualAlert, sendAlertToCaregiver, sendReassuranceMessage } from '../services/alerts';
 import { testScheduler } from '../services/scheduler';
+import { healthReportService } from '../services/health-report-sms';
+import { adherenceReportService } from '../services/adherence-report-sms';
 
 const router = Router();
 
@@ -158,6 +160,94 @@ router.post('/reports/test-scheduler', async (req: Request, res: Response) => {
     console.error('❌ Test scheduler error:', error);
     res.status(500).json({ error: 'Failed to test scheduler' });
   }
+});
+
+/**
+ * GET /api/reports/status - Get health and adherence report status
+ */
+router.get('/status', (req: Request, res: Response) => {
+  const healthStatus = healthReportService.getStatus();
+  const adherenceStatus = adherenceReportService.getStatus();
+
+  res.json({
+    lastHealthReportAt: healthStatus.lastReportSentAt,
+    lastAdherenceReportAt: adherenceStatus.lastReportSentAt,
+    nextHealthReportAt: healthStatus.nextReportScheduledAt,
+    nextAdherenceReportAt: adherenceStatus.nextReportScheduledAt,
+    healthReportsSent: healthStatus.reportsSentCount,
+    adherenceReportsSent: adherenceStatus.reportsSentCount,
+    todayMetrics: healthStatus.metrics,
+    weeklyAdherence: adherenceStatus.currentWeekAdherence,
+  });
+});
+
+/**
+ * POST /api/reports/health/send-now - Manually trigger health report
+ */
+router.post('/health/send-now', async (req: Request, res: Response) => {
+  try {
+    console.log('📊 Manual health report triggered');
+    await healthReportService.sendDailyReport();
+    res.json({ status: 'success', message: 'Health report sent' });
+  } catch (error) {
+    console.error('Error sending health report:', error);
+    res.status(500).json({ error: 'Failed to send health report' });
+  }
+});
+
+/**
+ * POST /api/reports/adherence/send-now - Manually trigger adherence report
+ */
+router.post('/adherence/send-now', async (req: Request, res: Response) => {
+  try {
+    console.log('💊 Manual adherence report triggered');
+    await adherenceReportService.sendWeeklyReport();
+    res.json({ status: 'success', message: 'Adherence report sent' });
+  } catch (error) {
+    console.error('Error sending adherence report:', error);
+    res.status(500).json({ error: 'Failed to send adherence report' });
+  }
+});
+
+/**
+ * GET /api/reports/adherence/history - Get adherence history
+ */
+router.get('/adherence/history', (req: Request, res: Response) => {
+  const weeklyAdherence = adherenceReportService.calculateWeeklyAdherence();
+
+  res.json({
+    period: 'Last 7 days',
+    summary: {
+      overallAdherence: weeklyAdherence.overallAdherence,
+      trend: weeklyAdherence.trend,
+      bestDay: weeklyAdherence.bestDay,
+      worstDay: weeklyAdherence.worstDay,
+    },
+    dailyBreakdown: weeklyAdherence.dailyBreakdown,
+  });
+});
+
+/**
+ * GET /api/reports/health/metrics - Get today's health metrics
+ */
+router.get('/health/metrics', (req: Request, res: Response) => {
+  const metrics = healthReportService.calculateTodayMetrics();
+  
+  res.json({
+    timestamp: new Date(),
+    medications: {
+      takenToday: metrics.medicationsTakenToday,
+      scheduledToday: metrics.medicationsTotal,
+      adherence: metrics.medicationAdherence,
+    },
+    activity: {
+      count: metrics.activitiesCount,
+      duration: metrics.activeDuration,
+      lastActivity: metrics.lastActivity,
+    },
+    observations: metrics.observations,
+    concerns: metrics.concerns,
+  });
 });
 
 export default router;
