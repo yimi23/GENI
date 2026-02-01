@@ -12,6 +12,7 @@ interface MonitoringResult {
   status: 'present' | 'taken' | 'unclear';
   confidence: string;
   observations: string;
+  responseText?: string; // GENI's contextual message
 }
 
 export function useContinuousMonitoring(
@@ -87,6 +88,7 @@ export function useContinuousMonitoring(
         status: result.status,
         confidence: result.confidence,
         observations: result.observations,
+        responseText: result.responseText, // GENI's contextual message
       };
 
       setResults(prev => [...prev.slice(-9), monitoringResult]); // Keep last 10 results
@@ -94,10 +96,31 @@ export function useContinuousMonitoring(
       
       console.log('✅ Continuous monitoring result:', result.status);
       
+      // Only emit message if it's DIFFERENT from the last one (prevent duplicates)
+      if (result.responseText) {
+        const lastResult = results[results.length - 1];
+        const isDuplicate = lastResult && lastResult.responseText === result.responseText;
+        
+        if (!isDuplicate) {
+          console.log('💬 GENI says:', result.responseText);
+          
+          // Emit custom event with GENI's message
+          const event = new CustomEvent('geni-monitoring-message', {
+            detail: {
+              message: result.responseText,
+              status: result.status,
+              timestamp: new Date(),
+            }
+          });
+          window.dispatchEvent(event);
+        } else {
+          console.log('⏭️  Skipping duplicate message');
+        }
+      }
+      
       // Trigger event if status changed
       if (results.length > 0 && results[results.length - 1].status !== result.status) {
         console.log('🔔 Status changed:', results[results.length - 1].status, '→', result.status);
-        // Could emit custom event here for UI notifications
       }
       
     } catch (error) {
@@ -138,17 +161,21 @@ export function useContinuousMonitoring(
     }
   };
 
-  // Restore monitoring state on mount (after HMR)
+  // Auto-start monitoring on mount if enabled
   useEffect(() => {
     const wasMonitoring = sessionStorage.getItem('geni_monitoring_active') === 'true';
-    if (wasMonitoring && !isMonitoring && !intervalRef.current) {
-      console.log('🔄 Restoring monitoring after re-mount');
-      // Small delay to ensure camera is ready
-      setTimeout(() => {
-        if (mountedRef.current) {
-          startMonitoring();
-        }
-      }, 1000);
+    
+    // Auto-start if it was previously running OR if it's the first load
+    if (wasMonitoring || sessionStorage.getItem('geni_monitoring_active') === null) {
+      if (!isMonitoring && !intervalRef.current) {
+        console.log('🔄 Auto-starting monitoring on mount');
+        // Small delay to ensure camera is ready
+        setTimeout(() => {
+          if (mountedRef.current && !intervalRef.current) {
+            startMonitoring();
+          }
+        }, 1500); // Longer delay for camera
+      }
     }
   }, []);
   

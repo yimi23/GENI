@@ -1,32 +1,40 @@
 import { Router, Request, Response } from 'express';
 import { parseIntent, generateResponse } from '../services/intent';
-import { addActivity } from '../state';
+import { state, addActivity } from '../state';
 import { emitActivity, emitSpeak } from '../socket';
 import { generateFollowUp } from '../services/conversation';
+import { conversationMemory } from '../services/conversation-memory';
+import { buildGENIContext } from '../services/geni-context';
 
 const router = Router();
 
-// Store recent conversation history (in-memory for now)
-// TODO: Move to proper session storage
-const conversationHistory: Map<string, { role: 'user' | 'assistant'; text: string }[]> = new Map();
-
 router.post('/chat', async (req: Request, res: Response) => {
   try {
-    const { message, sessionId = 'default' } = req.body;
+    const { message, sessionId } = req.body;
     
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
     }
     
-    // Get conversation history for this session
-    let history = conversationHistory.get(sessionId) || [];
+    // Get or create session
+    const session = conversationMemory.getOrCreateSession(
+      state.patient.name,
+      sessionId
+    );
     
     // Log user message
     const userActivity = addActivity(`User: ${message}`, 'message');
     emitActivity(userActivity);
     
-    // Add to history
-    history.push({ role: 'user', text: message });
+    // Add to persistent conversation memory
+    const context = buildGENIContext();
+    conversationMemory.addMessage(session.id, 'user', message, {
+      timeOfDay: context.timeOfDay,
+      medicationsPending: context.pendingMedications.map(m => m.name),
+    });
+    
+    // Get conversation history for follow-up logic
+    const history = conversationMemory.getHistory(session.id, 10);
     
     // Parse intent and generate contextual response with follow-up logic
     const intent = await parseIntent(message);
@@ -43,14 +51,11 @@ router.post('/chat', async (req: Request, res: Response) => {
       response = intent.response || await generateResponse(message, history);
     }
     
-    // Add GENI response to history
-    history.push({ role: 'assistant', text: response });
-    
-    // Keep only last 10 messages
-    if (history.length > 10) {
-      history = history.slice(-10);
-    }
-    conversationHistory.set(sessionId, history);
+    // Add GENI response to persistent memory
+    conversationMemory.addMessage(session.id, 'geni', response, {
+      isFollowUp: shouldAskFollowUp,
+      timeOfDay: context.timeOfDay,
+    });
     
     // Log GENI response
     const geniActivity = addActivity(`GENI: ${response}`, 'message');
@@ -59,11 +64,17 @@ router.post('/chat', async (req: Request, res: Response) => {
     // Trigger TTS on client
     emitSpeak(response);
     
+    console.log(`\n💬 Conversation Flow:`);
+    console.log(conversationMemory.getRecentContext(session.id, 5));
+    console.log('');
+    
     res.json({
       response,
       intent: intent.intent,
       entities: intent.entities,
       conversational: shouldAskFollowUp, // Let client know this is a conversation, not just an answer
+      sessionId: session.id,
+      sessionSummary: conversationMemory.getSessionSummary(session.id),
     });
     
   } catch (error) {

@@ -1,0 +1,108 @@
+[
+  {
+    "id": "1769924008788-khynnc",
+    "timestamp": 1769924008788,
+    "category": "other",
+    "description": "redbull and human ",
+    "filename": "1769924008788-khynnc.jpg"
+  },
+  {
+    "id": "1769924041226-9luxb2",
+    "timestamp": 1769924041226,
+    "category": "human-hand",
+    "description": "human hand and mobile phone\r\n",
+    "filename": "1769924041226-9luxb2.jpg"
+  },
+  {
+    "id": "1769924050344-pcc5v6",
+    "timestamp": 1769924050344,
+    "category": "human-face",
+    "description": "Human face in frame",
+    "filename": "1769924050344-pcc5v6.jpg"
+  },
+  {
+    "id": "1769924073935-01x9st",
+    "timestamp": 1769924073935,
+    "category": "other",
+    "description": "wallate and human hand \r\n",
+    "filename": "1769924073935-01x9st.jpg"
+  },
+  {
+    "id": "1769924082497-so7uis",
+    "timestamp": 1769924082497,
+    "category": "wall",
+    "description": "Wall or background",
+    "filename": "1769924082497-so7uis.jpg"
+  },
+  {
+    "id": "1769924109394-dmjlry",
+    "timestamp": 1769924109394,
+    "category": "other",
+    "description": "water bottle",
+    "filename": "1769924109394-dmjlry.jpg"
+  },
+  {
+    "id": "1769924164785-cnskfn",
+    "timestamp": 1769924164785,
+    "category": "other",
+    "description": "medcine bottle",
+    "filename": "1769924164785-cnskfn.jpg"
+  },
+  {
+    "id": "1769924189879-55uf2t",
+    "timestamp": 1769924189879,
+    "category": "pill-organizer-full",
+    "description": "Pill organizer with pills visible",
+    "filename": "1769924189879-55uf2t.jpg"
+  },
+  {
+    "id": "1769924217334-mvlefy",
+    "timestamp": 1769924217334,
+    "category": "other",
+    "description": "pill orgnaiser with days missing",
+    "filename": "1769924217334-mvlefy.jpg"
+  },
+  {
+    "id": "1769924236880-jdezn8",
+    "timestamp": 1769924236880,
+    "category": "other",
+    "description": "human glasses",
+    "filename": "1769924236880-jdezn8.jpg"
+  },
+  {
+    "id": "1769924256243-or4ubg",
+    "timestamp": 1769924256243,
+    "category": "other",
+    "description": "paper plate",
+    "filename": "1769924256243-or4ubg.jpg"
+  },
+  {
+    "id": "1769924275676-636i73",
+    "timestamp": 1769924275676,
+    "category": "other",
+    "description": "note book",
+    "filename": "1769924275676-636i73.jpg"
+  },
+  {
+    "id": "1769925726994-h06akd",
+    "timestamp": 1769925726994,
+    "category": "pill-organizer-full",
+    "description": "A weekly pill organizer with five compartments labeled with days of the week, filled with pastel-colored pills in white, blue, and pink.",
+    "filename": "empty.png",
+    "confidence": 0.98,
+    "auto_labeled": true,
+    "alternative_category": null,
+    "notes": "Compartments are filled with multiple small and medium-sized pills across different colors"
+  },
+  {
+    "id": "1769925731793-tpckdb",
+    "timestamp": 1769925731793,
+    "category": "pill-organizer-full",
+    "description": "A weekly pill organizer with five compartments labeled Monday through Friday, each filled with pastel-colored pills in white, blue, and pink shades.",
+    "filename": "fullstate.png",
+    "confidence": 0.98,
+    "auto_labeled": true,
+    "alternative_category": null,
+    "notes": "Organized medication tracking system with color-coded pills for each day of the work week"
+  }
+]

@@ -10,6 +10,12 @@ import base64
 import numpy as np
 import cv2
 from pathlib import Path
+import warnings
+
+# Suppress all warnings to keep stdout clean for JSON
+warnings.filterwarnings('ignore')
+import os
+os.environ['YOLO_VERBOSE'] = 'False'
 
 # Check if YOLOv8 is available
 try:
@@ -28,10 +34,10 @@ class PillDetector:
         if not YOLO_AVAILABLE:
             raise ImportError("ultralytics not installed")
         
-        # Default model path
+        # Default model path - use trained GENI model
         if model_path is None:
             model_path = str(Path(__file__).parent.parent.parent / 
-                           "yolo-training/runs/detect/pill_detection/weights/best.pt")
+                           "models/geni_yolo.pt")
         
         # Check if custom model exists
         if not Path(model_path).exists():
@@ -40,7 +46,7 @@ class PillDetector:
             print("Using pretrained YOLOv8n (train custom model for pill detection)", file=sys.stderr)
             model_path = "yolov8n.pt"
         
-        self.model = YOLO(model_path)
+        self.model = YOLO(model_path, verbose=False)
         self.confidence_threshold = 0.6
     
     def detect_from_base64(self, base64_image: str) -> dict:
@@ -86,16 +92,30 @@ class PillDetector:
                     "details": f"Low confidence detection ({confidence:.2%})"
                 }
             
-            # Map YOLO classes to status
-            if class_name == 'monday_empty':
-                status = "taken"
-                details = "Monday compartment is empty - pills confirmed taken"
-            elif class_name == 'monday_full':
+            # Map YOLO classes to status with contextual details
+            # Current model classes: human-face, human-hand, other, pill-organizer-full, wall
+            if class_name == 'pill-organizer-full':
                 status = "present"
-                details = "Pills detected in Monday compartment"
+                details = "Pill organizer visible with pills present in compartments"
+            elif class_name == 'human-face':
+                # Patient is visible but no pill organizer
+                status = "unclear"
+                details = "Patient's face visible on camera, but pill organizer not in view"
+            elif class_name == 'human-hand':
+                # Hands visible (maybe reaching for pills?)
+                status = "unclear"
+                details = "Hands visible on camera, but pill organizer not clearly in view"
+            elif class_name == 'wall':
+                # Just background - patient may not be present
+                status = "unclear"
+                details = "Camera shows background wall - patient and pill organizer not in view"
+            elif class_name == 'other':
+                # Generic objects/scene
+                status = "unclear"
+                details = "Camera shows general scene/objects - pill organizer not clearly visible"
             else:
                 status = "unclear"
-                details = f"Unknown detection: {class_name}"
+                details = f"Unexpected detection: {class_name}"
             
             return {
                 "status": status,

@@ -2,6 +2,7 @@ import { Patient, Contact } from './models/Patient';
 import { Medication, MedicationHistory } from './models/Medication';
 import { Activity, createActivity } from './models/Activity';
 import { Reminder } from './models/Reminder';
+import { config } from './config';
 
 interface AppState {
   patient: Patient;
@@ -25,10 +26,10 @@ interface AppState {
 
 export const state: AppState = {
   patient: {
-    name: 'Margaret Johnson',
-    age: 78,
-    conditions: ['Diabetes', 'High Blood Pressure'],
-    allergies: ['Penicillin', 'Sulfa'],
+    name: config.patient.name, // Load from .env (PATIENT_NAME)
+    age: 78, // TODO: Load from config
+    conditions: ['Diabetes', 'High Blood Pressure'], // TODO: Load from config
+    allergies: ['Penicillin', 'Sulfa'], // TODO: Load from config
   },
   
   contacts: [

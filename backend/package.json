@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "nodemon",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "augment": "tsc && node dist/scripts/augment-images.js",
+    "auto-label": "tsc && node dist/scripts/auto-label-images.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.20.0",

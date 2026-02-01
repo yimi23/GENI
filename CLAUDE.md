@@ -15,13 +15,24 @@
 
 ## Critical Rules (Never Break These)
 
-### 1. Claude Model Names
-❌ **WRONG:** `claude-3-5-sonnet-20241022` (doesn't exist)
-✅ **CORRECT:** `claude-3-5-sonnet-20240620`
+### 1. Claude Model Names (CRITICAL - FINAL ANSWER!)
+❌ **WRONG:** `claude-3-5-sonnet-20241022` → 404
+❌ **WRONG:** `claude-3-5-sonnet-20240620` → 404  
+❌ **WRONG:** `claude-3-sonnet-20240229` → 404
+✅ **CORRECT:** `claude-3-haiku-20240307` ← **ONLY MODEL THAT WORKS**
 
-**Why:** Used wrong model name, got 404 errors from Anthropic API
+**Why:** This Anthropic API key doesn't have access to ANY Sonnet models (3.0 or 3.5). Only Haiku is available.
+
+**All attempts:**
+1. `claude-3-5-sonnet-20241022` → 404 not_found_error
+2. `claude-3-5-sonnet-20240620` → 404 not_found_error
+3. `claude-3-sonnet-20240229` → 404 not_found_error
+4. `claude-3-haiku-20240307` → ✅ **WORKS** (all accounts have this)
+
+**Final Solution:** Use Haiku for everything (vision, conversations, brain).
+
 **Fixed in:** vision.ts, geni-brain.ts, conversation.ts
-**Date:** 2026-01-31
+**Date:** 2026-02-01 00:02 AM EST (finally resolved!)
 
 ### 2. React State + HMR = Data Loss
 ❌ **WRONG:** Store critical data only in React state

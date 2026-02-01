@@ -7,7 +7,8 @@ import { state, addActivity, updateMedicationStatus } from '../state';
 import { emitActivity, emitMedicationUpdate } from '../socket';
 import { savePillCheck, getPillCheckHistory, getLastPillCheck } from '../database/pillCheckHistory';
 import { generatePillCheckResponse } from '../services/geni-brain';
-import { notifyMedicationCheck, shouldNotifyCaregiver } from '../services/caregiver-updates';
+import { notifyMedicationCheck, shouldNotifyCaregiver, sendCaregiverUpdate } from '../services/caregiver-updates';
+import { analyzeMedicationAdherence, type CompartmentStates } from '../services/medication-adherence';
 
 const router = Router();
 const upload = multer({ dest: 'uploads/' });
@@ -78,46 +79,33 @@ router.post('/pill-check', upload.single('image'), async (req: Request, res: Res
     const base64Image = imageBuffer.toString('base64');
     
     let result;
-    let method = 'unknown';
+    let method: 'vision' | 'yolo' = 'vision'; // Default to Claude Vision (YOLO disabled - needs retraining)
     
-    // Try YOLOv8 first (faster, more accurate if trained)
-    const useYOLO = req.query.method !== 'vision'; // Default to YOLO
+    // Use Claude Vision as primary (intelligent compartment detection)
+    console.log('👁️  Using Claude Vision for pill detection...');
+    result = await analyzePillImage(base64Image);
     
+    // YOLO disabled - not detecting pill organizers correctly
+    // Uncomment below to re-enable YOLO when retrained:
+    /*
+    const useYOLO = req.query.method === 'yolo'; // Only if explicitly requested
     if (useYOLO) {
       console.log('🎯 Attempting YOLOv8 detection...');
       result = await detectPillsYOLO(base64Image);
-      
-      // If YOLOv8 is unclear, fall back to Claude Vision
-      if (result.status === 'unclear' && result.confidence < 0.5) {
-        console.log('⚠️  YOLOv8 unclear, falling back to Claude Vision...');
-        result = await analyzePillImage(base64Image);
-        method = 'vision';
-      } else {
-        method = 'yolo';
-        console.log(`✅ YOLOv8 detection: ${result.status} (${result.confidence.toFixed(2)})`);
-      }
-    } else {
-      // Explicitly requested Claude Vision
-      console.log('👁️  Using Claude Vision...');
-      result = await analyzePillImage(base64Image);
-      method = 'vision';
+      method = 'yolo';
     }
+    */
     
     // Save to database (context only, not image)
-    // Handle different result types (Vision vs YOLO)
-    const confidence = typeof result.confidence === 'string' 
-      ? result.confidence 
-      : result.confidence > 0.7 ? 'high' : result.confidence > 0.4 ? 'medium' : 'low';
-    
-    const observations = 'observations' in result 
-      ? result.observations 
-      : ('details' in result ? result.details : 'No additional details');
+    // Vision API always returns string confidence and observations
+    const confidence = result.confidence as 'high' | 'medium' | 'low';
+    const observations = result.observations;
     
     const savedRecord = savePillCheck(
       result.status,
-      confidence as 'high' | 'medium' | 'low',
+      confidence,
       observations,
-      method as 'vision' | 'yolo'
+      method
     );
     
     // Log activity
@@ -133,24 +121,80 @@ router.post('/pill-check', upload.single('image'), async (req: Request, res: Res
     const activity = addActivity(activityMessage, 'medication');
     emitActivity(activity);
     
-    // Generate contextual GENI brain response
-    console.log('🧠 Generating contextual response with GENI brain...');
-    const responseText = await generatePillCheckResponse({
-      status: result.status as 'taken' | 'present' | 'unclear',
-      observations: observations
-    });
+    // NEW: Analyze medication adherence if compartments detected
+    let adherenceAnalysis = null;
+    let responseText = '';
     
-    // Send update to caregiver (if appropriate time/priority)
-    if (shouldNotifyCaregiver('medication_check', result.status === 'unclear' ? 'medium' : 'low')) {
-      console.log('📤 Sending medication check update to caregiver...');
-      notifyMedicationCheck({
+    // Type guard to check if result has compartments (from Vision API)
+    const hasCompartments = 'compartments' in result && result.compartments !== undefined;
+    
+    if (hasCompartments) {
+      const compartments = (result as any).compartments;
+      if (compartments && Object.keys(compartments).length > 0) {
+        console.log('🔍 Compartments detected - running adherence analysis...');
+        
+        adherenceAnalysis = analyzeMedicationAdherence(
+          compartments as CompartmentStates
+        );
+      
+        console.log('📊 Adherence Analysis:', adherenceAnalysis);
+        
+        // Use adherence-aware message instead of generic pill check response
+        responseText = adherenceAnalysis.message;
+      
+        // Send WhatsApp alert to caregiver if needed
+        if (adherenceAnalysis.shouldAlertCaregiver && adherenceAnalysis.caregiverAlertMessage) {
+          console.log('🚨 Sending caregiver alert via WhatsApp...');
+          
+          // Determine priority from concern level
+          const priorityMap = {
+            'none': 'low' as const,
+            'low': 'low' as const,
+            'medium': 'medium' as const,
+            'high': 'high' as const,
+            'critical': 'urgent' as const,
+          };
+          
+          const priority = priorityMap[adherenceAnalysis.concernLevel];
+          
+          // Check if we should notify now (time-based throttling)
+          if (shouldNotifyCaregiver('medication_check', priority)) {
+            sendCaregiverUpdate({
+              type: 'medication_check',
+              priority,
+              message: adherenceAnalysis.caregiverAlertMessage,
+              details: {
+                adherenceAnalysis,
+                visionResult: result,
+                method
+              }
+            }).catch(error => {
+              console.error('❌ Failed to send caregiver alert:', error);
+              // Don't fail the request if notification fails
+            });
+          }
+        }
+      }
+    } else {
+      // Fallback: No compartments detected, use generic response
+      console.log('🧠 Generating contextual response with GENI brain...');
+      responseText = await generatePillCheckResponse({
         status: result.status as 'taken' | 'present' | 'unclear',
-        observations: observations,
-        method: method as 'vision' | 'yolo'
-      }).catch(error => {
-        console.error('❌ Failed to send caregiver update:', error);
-        // Don't fail the request if notification fails
+        observations: observations
       });
+      
+      // Send update to caregiver (if appropriate time/priority)
+      if (shouldNotifyCaregiver('medication_check', result.status === 'unclear' ? 'medium' : 'low')) {
+        console.log('📤 Sending medication check update to caregiver...');
+        notifyMedicationCheck({
+          status: result.status as 'taken' | 'present' | 'unclear',
+          observations: observations,
+          method: method as 'vision' | 'yolo'
+        }).catch(error => {
+          console.error('❌ Failed to send caregiver update:', error);
+          // Don't fail the request if notification fails
+        });
+      }
     }
     
     // Clean up uploaded file
@@ -161,6 +205,7 @@ router.post('/pill-check', upload.single('image'), async (req: Request, res: Res
       method, // Return which method was used
       recordId: savedRecord.id, // Return database record ID
       responseText, // GENI brain-generated contextual response
+      adherenceAnalysis, // NEW: Include adherence analysis if available
     });
     
   } catch (error) {

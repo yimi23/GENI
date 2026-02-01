@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { makeVoiceCall, callDoctor } from '../services/twilio';
 import { state, addActivity } from '../state';
 import { emitActivity } from '../socket';
+import { config } from '../config';
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.post('/call/caregiver', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Contact not found' });
     }
     
-    const message = reason || 'Margaret needs to speak with you. Please call back when possible.';
+    const message = reason || `${config.patient.name} needs to speak with you. Please call back when possible.`;
     
     // Make the call
     const success = await makeVoiceCall(contact.phone, message, 'GENI');
@@ -88,7 +89,7 @@ router.post('/call/emergency', async (req: Request, res: Response) => {
   try {
     const { reason } = req.body;
     
-    const emergencyMessage = reason || 'Emergency alert triggered. Please check on Margaret immediately.';
+    const emergencyMessage = reason || `Emergency alert triggered. Please check on ${config.patient.name} immediately.`;
     
     // Call all primary contacts
     const primaryContacts = state.contacts.filter(c => c.isPrimary);

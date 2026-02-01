@@ -174,7 +174,7 @@ export function ChatInterface({ onBackToDashboard }: ChatInterfaceProps) {
           >
             <ArrowLeft size={18} />
           </button>
-          <h1 className="text-lg font-semibold text-gray-900">Chat with GENI</h1>
+          <img src="/geni-logo.png" alt="GENI" className="h-8 w-auto object-contain" />
         </div>
       </header>
 

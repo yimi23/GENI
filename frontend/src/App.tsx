@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { ChatInterface } from './components/chat/ChatInterface';
 import { MedicationHistory } from './components/history/MedicationHistory';
+import TrainingMode from './components/TrainingMode';
 import { FallDetectionModal } from './components/modals/FallDetectionModal';
 import { IncomingMessageBanner } from './components/modals/IncomingMessageBanner';
 import { GeniLogoAnimation } from './components/GeniLogoAnimation';
@@ -10,12 +11,16 @@ import { useSocketEvent } from './hooks/useSocket';
 import { speak } from './services/tts';
 import type { Activity, IncomingMessage } from './types';
 
-type View = 'dashboard' | 'chat' | 'medication-history';
+type View = 'dashboard' | 'chat' | 'medication-history' | 'training';
 
 export default function App() {
-  const [showLogo, setShowLogo] = useState(true);
+  // Check URL for training mode
+  const urlParams = new URLSearchParams(window.location.search);
+  const isTrainingMode = urlParams.get('training') === 'true';
+  
+  const [showLogo, setShowLogo] = useState(!isTrainingMode); // Skip logo for training
   const { data, loading, refresh } = useStatus();
-  const [currentView, setCurrentView] = useState<View>('chat'); // Default to GENI interface
+  const [currentView, setCurrentView] = useState<View>(isTrainingMode ? 'training' : 'chat');
   const [showFallModal, setShowFallModal] = useState(false);
   const [incomingMessage, setIncomingMessage] = useState<IncomingMessage | null>(null);
 
@@ -59,8 +64,9 @@ export default function App() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
+          <img src="/geni-logo-v2.png" alt="GENI" className="h-16 w-auto object-contain mx-auto mb-4 opacity-50" />
           <div className="w-16 h-16 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading GENI...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -122,6 +128,10 @@ export default function App() {
           <MedicationHistory
             onBackToDashboard={() => setCurrentView('dashboard')}
           />
+        )}
+
+        {currentView === 'training' && (
+          <TrainingMode />
         )}
       </div>
 

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import twilio from 'twilio';
 import { addActivity, state } from '../state';
 import { emitActivity, emitIncomingMessage } from '../socket';
+import { config } from '../config';
 
 const MessagingResponse = twilio.twiml.MessagingResponse;
 const VoiceResponse = twilio.twiml.VoiceResponse;
@@ -45,7 +46,8 @@ router.post('/webhook/message', (req: Request, res: Response) => {
     
     // Auto-respond (optional)
     const twiml = new MessagingResponse();
-    twiml.message('Thank you for your message. Margaret will be notified. - GENI');
+    const patientFirstName = config.patient.name.split(' ')[0];
+    twiml.message(`Thank you for your message. ${patientFirstName} will be notified. - GENI`);
     
     res.type('text/xml');
     res.send(twiml.toString());
@@ -72,7 +74,7 @@ router.post('/webhook/voice', (req: Request, res: Response) => {
       // Call connected - play emergency message
       twiml.say({
         voice: 'Polly.Joanna'
-      }, 'This is GENI calling on behalf of Margaret Johnson. Please check on her immediately. She may need assistance.');
+      }, `This is GENI calling on behalf of ${config.patient.name}. Please check on ${config.patient.name.split(' ')[0]} immediately. They may need assistance.`);
       
       twiml.pause({ length: 2 });
       
@@ -107,7 +109,7 @@ router.post('/webhook/voice/confirm', (req: Request, res: Response) => {
   if (Digits) {
     twiml.say({
       voice: 'Polly.Joanna'
-    }, 'Thank you for confirming. Margaret has been notified that help is on the way.');
+    }, `Thank you for confirming. ${config.patient.name.split(' ')[0]} has been notified that help is on the way.`);
     
     // Log confirmation
     addActivity('Emergency alert acknowledged by caregiver', 'system');

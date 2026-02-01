@@ -60,6 +60,19 @@ export function emitFallDetected() {
   }
 }
 
+export function emitFallAlert(data: {
+  state: 'confirming' | 'emergency' | 'escalated' | 'cancelled';
+  message: string;
+  patient?: string;
+  timestamp?: number;
+  progress?: number;
+  data?: any;
+}) {
+  if (io) {
+    io.emit('fall_alert', data);
+  }
+}
+
 export function emitHardwareStatus(status: any) {
   if (io) {
     io.emit('hardware_status', status);

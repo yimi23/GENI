@@ -1,6 +1,7 @@
 import { state, getPrimaryContact } from '../state';
 import { sendWhatsAppMessage } from './twilio';
 import { addActivity } from '../state';
+import { config } from '../config';
 
 /**
  * Generate end-of-day summary for caregiver
@@ -17,11 +18,14 @@ export function generateDailyReport(): string {
   const pendingMeds = state.todaysMedications.filter(m => m.status === 'pending' || m.status === 'upcoming');
   const missedMeds = state.todaysMedications.filter(m => m.status === 'missed');
   
-  // Get conversation activity (how many times Margaret talked to GENI)
+  // Get conversation activity (how many times patient talked to GENI)
   const todayStart = new Date(today).setHours(0, 0, 0, 0);
   const conversationCount = state.activities.filter(a => 
     (a.type === 'voice' || a.type === 'message') && a.timestamp > todayStart
   ).length;
+  
+  // Get patient name dynamically
+  const patientFirstName = config.patient.name.split(' ')[0];
   
   // Build medication summary
   let medSummary = '';
@@ -36,15 +40,15 @@ export function generateDailyReport(): string {
   // Determine overall tone
   let overallMessage = '';
   if (missedMeds.length > 0) {
-    overallMessage = `Margaret had a good day overall, though she missed ${missedMeds.length} medication${missedMeds.length > 1 ? 's' : ''}. I'll keep monitoring.`;
+    overallMessage = `${patientFirstName} had a good day overall, though ${patientFirstName.toLowerCase() === 'margaret' ? 'she' : 'they'} missed ${missedMeds.length} medication${missedMeds.length > 1 ? 's' : ''}. I'll keep monitoring.`;
   } else if (pendingMeds.length > 0) {
-    overallMessage = `Margaret's doing well! She has ${pendingMeds.length} medication${pendingMeds.length > 1 ? 's' : ''} left for tonight.`;
+    overallMessage = `${patientFirstName}'s doing well! ${patientFirstName.toLowerCase() === 'margaret' ? 'She' : 'They'} has ${pendingMeds.length} medication${pendingMeds.length > 1 ? 's' : ''} left for tonight.`;
   } else {
-    overallMessage = `Margaret had a great day! All medications taken on time. 🎉`;
+    overallMessage = `${patientFirstName} had a great day! All medications taken on time. 🎉`;
   }
   
   // Build the report
-  const report = `Hi! Here's Margaret's daily update:
+  const report = `Hi! Here's ${patientFirstName}'s daily update:
 
 📅 ${dayName}, ${dateStr}
 
@@ -91,6 +95,7 @@ export async function sendDailyReportToCaregiver(): Promise<boolean> {
 export function generateQuickUpdate(): string {
   const takenMeds = state.todaysMedications.filter(m => m.status === 'taken').length;
   const totalMeds = state.todaysMedications.length;
+  const patientFirstName = config.patient.name.split(' ')[0];
   
-  return `Quick update: Margaret's doing well! ${takenMeds}/${totalMeds} medications taken so far today. 👍`;
+  return `Quick update: ${patientFirstName}'s doing well! ${takenMeds}/${totalMeds} medications taken so far today. 👍`;
 }

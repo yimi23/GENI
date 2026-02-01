@@ -20,5 +20,5 @@ Common intents:
 - general_query: "What time is it?", "Do I have appointments?"
 - emergency: "I fell", "I need help", "Call 911"
 
-Always be warm, patient, and clear in your responses. Address the user as Margaret.
+Always be warm, patient, and clear in your responses. Address the user by their first name when appropriate.
 `;

@@ -6,37 +6,24 @@ interface GeniLogoAnimationProps {
 }
 
 export function GeniLogoAnimation({ onComplete }: GeniLogoAnimationProps) {
-  const [showContent, setShowContent] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowContent(true), 300);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    // Start fade out after animation completes (3.5s total animation time)
+    // Start fade out after logo has been displayed
     const fadeTimer = setTimeout(() => {
       setFadeOut(true);
-    }, 3500);
+    }, 3000);
 
-    // Call onComplete after fade out finishes (add 800ms for fade duration)
+    // Call onComplete after fade out finishes
     const completeTimer = setTimeout(() => {
       onComplete?.();
-    }, 4300);
+    }, 3800);
 
     return () => {
       clearTimeout(fadeTimer);
       clearTimeout(completeTimer);
     };
   }, [onComplete]);
-
-  const letters = [
-    { char: "G", particles: 12 },
-    { char: "E", particles: 10 },
-    { char: "N", particles: 10 },
-    { char: "I", particles: 8 },
-  ];
 
   return (
     <motion.div
@@ -50,133 +37,74 @@ export function GeniLogoAnimation({ onComplete }: GeniLogoAnimationProps) {
       }}
     >
       {/* Subtle ambient particles in background */}
-      {showContent &&
-        [...Array(20)].map((_, i) => (
-          <motion.div
-            key={`ambient-${i}`}
-            className="absolute w-1 h-1 bg-blue-400/20 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{
-              opacity: [0, 0.4, 0],
-              scale: [0, 1, 0],
-              y: [0, -100],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              delay: Math.random() * 3,
-              ease: "easeOut",
-            }}
-          />
-        ))}
+      {[...Array(15)].map((_, i) => (
+        <motion.div
+          key={`particle-${i}`}
+          className="absolute w-1 h-1 bg-blue-400/20 rounded-full"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{
+            opacity: [0, 0.4, 0],
+            scale: [0, 1, 0],
+            y: [0, -120],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            delay: Math.random() * 3,
+            ease: "easeOut",
+          }}
+        />
+      ))}
 
       {/* Central content */}
       <div className="relative z-10">
         {/* Subtle glow background */}
         <motion.div
-          className="absolute inset-0 -m-32 bg-gradient-to-r from-blue-500/10 via-teal-500/10 to-blue-500/10 rounded-full blur-3xl"
+          className="absolute inset-0 -m-32 bg-gradient-to-r from-blue-500/10 via-green-500/10 to-blue-500/10 rounded-full blur-3xl"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: [0.3, 0.5, 0.3], scale: 1 }}
           transition={{
             opacity: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-            scale: { duration: 1.2, ease: "easeOut" },
+            scale: { duration: 1.5, ease: "easeOut" },
           }}
         />
 
-        {/* GENI Letters */}
-        <div className="relative flex items-center justify-center gap-2">
-          {letters.map((letter, letterIndex) => (
-            <div key={letter.char} className="relative inline-block">
-              {/* Particles converging */}
-              {showContent &&
-                [...Array(letter.particles)].map((_, particleIndex) => {
-                  const totalParticles = letter.particles;
-                  const angle = (particleIndex / totalParticles) * Math.PI * 2;
-                  const distance = 150;
-                  const startX = Math.cos(angle) * distance;
-                  const startY = Math.sin(angle) * distance;
-
-                  return (
-                    <motion.div
-                      key={`particle-${letterIndex}-${particleIndex}`}
-                      className="absolute w-1.5 h-1.5 bg-blue-500/60 rounded-full"
-                      style={{
-                        left: "50%",
-                        top: "50%",
-                      }}
-                      initial={{
-                        x: startX,
-                        y: startY,
-                        opacity: 0,
-                        scale: 0,
-                      }}
-                      animate={{
-                        x: 0,
-                        y: 0,
-                        opacity: [0, 1, 0],
-                        scale: [0, 1.5, 0],
-                      }}
-                      transition={{
-                        duration: 1.2,
-                        delay: letterIndex * 0.15 + particleIndex * 0.02,
-                        ease: "easeOut",
-                      }}
-                    />
-                  );
-                })}
-
-              {/* Letter */}
-              <motion.div
-                className="text-8xl font-bold relative z-10"
-                style={{
-                  fontFamily: "Manrope, sans-serif",
-                  color: "#2563eb",
-                }}
-                initial={{ opacity: 0, scale: 0.3, y: 30 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{
-                  duration: 0.7,
-                  delay: letterIndex * 0.15 + 0.8,
-                  type: "spring",
-                  stiffness: 150,
-                  damping: 12,
-                }}
-              >
-                <motion.div
-                  animate={{
-                    y: [0, -5, 0],
-                  }}
-                  transition={{
-                    duration: 2.5,
-                    repeat: Infinity,
-                    delay: letterIndex * 0.2 + 2,
-                    ease: "easeInOut",
-                  }}
-                  style={{
-                    background: "linear-gradient(135deg, #2563eb 0%, #1e40af 50%, #14b8a6 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                    display: "inline-block",
-                  }}
-                >
-                  {letter.char}
-                </motion.div>
-              </motion.div>
-            </div>
-          ))}
-        </div>
+        {/* GENI Logo */}
+        <motion.div
+          className="relative"
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{
+            duration: 1,
+            ease: [0.16, 1, 0.3, 1], // Custom easing for smooth entrance
+          }}
+        >
+          <motion.img
+            src="/geni-logo-v2.png"
+            alt="GENI Healthcare Assistant"
+            className="w-[500px] h-auto"
+            animate={{
+              y: [0, -8, 0],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1,
+            }}
+          />
+        </motion.div>
 
         {/* Subtitle */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{
-            delay: 2,
+            delay: 0.8,
             duration: 0.8,
             ease: "easeOut",
           }}
@@ -190,32 +118,32 @@ export function GeniLogoAnimation({ onComplete }: GeniLogoAnimationProps) {
           </p>
         </motion.div>
 
-        {/* Pulse ring */}
+        {/* Single elegant pulse ring */}
         <motion.div
           className="absolute inset-0 -m-24 border border-blue-400/20 rounded-full pointer-events-none"
           initial={{ scale: 1, opacity: 0 }}
           animate={{
-            scale: [1, 1.8],
-            opacity: [0.4, 0],
+            scale: [1, 1.5],
+            opacity: [0.3, 0],
           }}
           transition={{
-            duration: 3,
+            duration: 2.5,
             repeat: Infinity,
             ease: "easeOut",
-            delay: 2.5,
+            delay: 1.2,
           }}
         />
       </div>
 
-      {/* Status indicator */}
+      {/* Minimal status indicator */}
       <motion.div
         className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 2.5 }}
+        transition={{ delay: 1.5 }}
       >
         <motion.div
-          className="w-2 h-2 bg-teal-500 rounded-full"
+          className="w-2 h-2 bg-green-500 rounded-full"
           animate={{
             opacity: [0.5, 1, 0.5],
             scale: [1, 1.2, 1],

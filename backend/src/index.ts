@@ -4,6 +4,7 @@ import http from 'http';
 import { config } from './config';
 import { initializeSocket } from './socket';
 import { initializeScheduler } from './services/scheduler';
+import { fallDetectionService } from './services/fall-detection';
 
 // Routes
 import statusRouter from './routes/status';
@@ -19,6 +20,9 @@ import callsRouter from './routes/calls';
 import fallRouter from './routes/fall';
 import reportsRouter from './routes/reports';
 import ttsRouter from './routes/tts';
+import trainingRouter from './routes/training';
+import monitoringRouter from './routes/monitoring';
+import fallDetectionRouter from './routes/fall-detection';
 
 const app = express();
 const server = http.createServer(app);
@@ -28,6 +32,14 @@ initializeSocket(server);
 
 // Initialize Scheduler (daily/weekly reports, health checks)
 initializeScheduler();
+
+// Initialize Fall Detection (continuous monitoring)
+fallDetectionService.start({
+  patient: config.patient.name,
+  camera: 0,
+  headless: true, // No window in production
+});
+console.log('🚨 Fall detection started (YOLO pose estimation)');
 
 // Middleware
 app.use(cors());
@@ -46,8 +58,11 @@ app.use('/api', proactiveRouter);
 app.use('/api/twilio', twilioRouter);
 app.use('/api', callsRouter);
 app.use('/api', fallRouter);
+app.use('/api', fallDetectionRouter);
 app.use('/api', reportsRouter);
 app.use('/api', ttsRouter);
+app.use('/api', trainingRouter);
+app.use('/api', monitoringRouter);
 
 // Health check
 app.get('/health', (req, res) => {

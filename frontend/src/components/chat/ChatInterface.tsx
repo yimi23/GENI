@@ -26,32 +26,34 @@ interface ChatInterfaceProps {
  * - This reduces latency and avoids redundant audio
  */
 export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInterfaceProps) {
-  // Force re-render counter to update UI when sessionStorage changes
-  const [renderKey, setRenderKey] = useState(0);
+  // Use proper React state instead of reading sessionStorage on every render
+  const [messages, setMessages] = useState<Message[]>([]);
   
-  // ALWAYS read from sessionStorage on render (don't use state)
-  const getMessages = (): Message[] => {
+  // Load messages from sessionStorage ONCE on mount
+  useEffect(() => {
     try {
       const saved = sessionStorage.getItem('geni_messages');
       if (saved) {
-        return JSON.parse(saved);
+        const loaded = JSON.parse(saved);
+        setMessages(loaded);
+        console.log('✅ Loaded messages from storage:', loaded.length);
       }
-      return [];
     } catch (error) {
       console.error('❌ Failed to load messages:', error);
-      return [];
     }
-  };
+  }, []); // Only on mount
   
-  const messages = getMessages();
-  console.log('🔄 Render - messages from storage:', messages.length);
+  // Save messages to sessionStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      sessionStorage.setItem('geni_messages', JSON.stringify(messages));
+      console.log('💾 Saved messages to storage:', messages.length);
+    }
+  }, [messages]);
   
-  // Helper to add messages (updates sessionStorage and forces re-render)
+  // Helper to add messages (updates state, which auto-saves)
   const addMessage = (message: Message) => {
-    const current = getMessages();
-    const updated = [...current, message];
-    sessionStorage.setItem('geni_messages', JSON.stringify(updated));
-    setRenderKey(prev => prev + 1);
+    setMessages(prev => [...prev, message]);
   };
   
   const [isRecording, setIsRecording] = useState(false);
@@ -59,8 +61,8 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isCheckingPills, setIsCheckingPills] = useState(false);
-  const [lastInteractionWasVoice, setLastInteractionWasVoice] = useState(false);
-  const [speakOnlyWhenSpokenTo, setSpeakOnlyWhenSpokenTo] = useState(true); // Default mode
+  const [, setLastInteractionWasVoice] = useState(false);
+  const [speakOnlyWhenSpokenTo] = useState(true); // Default mode
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -71,7 +73,7 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
   // Continuous monitoring hook
   const {
     isMonitoring,
-    isProcessing: isAutoChecking,
+    isProcessing: _isAutoChecking,
     lastCheck,
     results: monitoringResults,
     startMonitoring,
@@ -93,7 +95,57 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
     scrollToBottom();
   }, [messages, isTyping]);
   
-  // Handle continuous monitoring results
+  // Listen for GENI monitoring messages from continuous monitoring
+  useEffect(() => {
+    const handleGeniMessage = (event: any) => {
+      const { message, timestamp } = event.detail;
+      
+      console.log('💬 Received GENI monitoring message:', message);
+      console.log('📝 Checking for duplicates...');
+      
+      // Check if this exact message was just added (prevent duplicates)
+      setMessages(currentMessages => {
+        const lastMessage = currentMessages[currentMessages.length - 1];
+        
+        if (lastMessage && lastMessage.text === message && lastMessage.sender === 'geni') {
+          console.log('⏭️  Duplicate message detected, skipping');
+          return currentMessages; // No change
+        }
+        
+        console.log('✅ New message, adding to chat and speaking...');
+        
+        // Add GENI's contextual message to the chat
+        const geniMessage: Message = {
+          sender: 'geni',
+          text: message,
+          time: new Date(timestamp).toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          }),
+          wasSpoken: true // Mark as spoken to avoid double-speaking
+        };
+        
+        console.log('✅ Message added, total messages:', updated.length);
+        
+        // Speak the message (contextual autonomy in action!)
+        console.log('🔊 Speaking via TTS...');
+        ttsSpeak(message).catch(err => {
+          console.error('❌ TTS failed:', err);
+        });
+        
+        return updated; // Update state
+      });
+    };
+    
+    window.addEventListener('geni-monitoring-message', handleGeniMessage);
+    
+    return () => {
+      window.removeEventListener('geni-monitoring-message', handleGeniMessage);
+    };
+  }, []);
+  
+  // Handle continuous monitoring results (status changes)
   useEffect(() => {
     if (monitoringResults.length < 2) return; // Need at least 2 results to detect change
     
@@ -159,6 +211,7 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
         setCameraActive(true);
         setCameraError(null);
         console.log('✅ Camera initialized');
+        // Monitoring auto-starts from useContinuousMonitoring hook
       }
     } catch (error) {
       console.error('❌ Camera initialization failed:', error);
@@ -255,33 +308,28 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
       const responseText = result.responseText || 'Let me check that for you...';
       
       console.log('💬 Adding result message:', responseText);
+      
+      // CRITICAL FIX: Force message display and TTS
       const resultMessage: Message = {
         sender: 'geni',
         text: responseText,
         time: getCurrentTime(),
-        wasSpoken: triggeredByVoice
+        wasSpoken: false
       };
       
-      // Add message via helper (saves to storage + forces re-render)
+      // Add message via helper
       addMessage(resultMessage);
-      console.log('💬 Message added, total:', getMessages().length);
+      console.log('💬 Message added');
       
-      // CRITICAL: Set checking to false BEFORE speaking/delay
+      // CRITICAL: Set checking to false BEFORE speaking
       setIsCheckingPills(false);
       console.log('✅ Pill check complete, state updated');
       
-      // Small delay to ensure state update before speaking
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // RULE: Speak only when spoken to
-      // If user used voice → respond with voice
-      // If user clicked button → respond with text only
-      if (speakOnlyWhenSpokenTo && triggeredByVoice) {
-        console.log('🔊 Speaking response (triggered by voice)');
-        speak(resultMessage.text);
-      } else {
-        console.log('🔇 Not speaking (triggered by button click)');
-      }
+      // ALWAYS SPEAK for better UX - user needs to hear GENI's response
+      console.log('🔊 Speaking response via TTS');
+      ttsSpeak(responseText).catch(err => {
+        console.error('❌ TTS failed:', err);
+      });
       
     } catch (error) {
       console.error('❌ Pill check error:', error);
@@ -290,13 +338,13 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
         sender: 'geni',
         text: 'Sorry, I had trouble checking the pills. Please try again.',
         time: getCurrentTime(),
-        wasSpoken: triggeredByVoice
+        wasSpoken: false
       };
       addMessage(errorMessage);
-      // RULE: Speak only when spoken to
-      if (speakOnlyWhenSpokenTo && triggeredByVoice) {
-        speak(errorMessage.text);
-      }
+      // Always speak errors too
+      ttsSpeak(errorMessage.text).catch(err => {
+        console.error('❌ TTS failed:', err);
+      });
     }
   };
 
@@ -408,7 +456,7 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
 
   const clearChat = () => {
     sessionStorage.removeItem('geni_messages');
-    setRenderKey(prev => prev + 1);
+    setMessages([]);
     console.log('🗑️ Chat cleared');
   };
 
@@ -417,7 +465,7 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">GENI</h1>
+          <img src="/geni-logo.png" alt="GENI" className="h-12 w-auto object-contain" />
           {messages.length > 0 && (
             <button
               onClick={clearChat}
@@ -466,11 +514,23 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
               </button>
               <button
                 onClick={() => isMonitoring ? stopMonitoring() : startMonitoring()}
-                className={`text-white text-xs ${isMonitoring ? 'bg-red-600 hover:bg-red-700' : 'bg-purple-600 hover:bg-purple-700'} px-3 py-1 rounded font-medium flex items-center gap-1 transition-colors`}
+                className={`text-white text-xs ${isMonitoring ? 'bg-red-600 hover:bg-red-700' : 'bg-purple-600 hover:bg-purple-700'} px-3 py-1 rounded font-medium flex items-center gap-1 transition-colors relative`}
               >
                 {isMonitoring ? <PauseCircle size={12} /> : <PlayCircle size={12} />}
                 {isMonitoring ? 'Stop Auto' : 'Start Auto'}
+                {isMonitoring && (
+                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                  </span>
+                )}
               </button>
+              {isMonitoring && (
+                <div className="text-green-400 text-xs bg-black/40 px-2 py-1 rounded flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                  Active
+                </div>
+              )}
               {lastCheck && (
                 <div className="text-white text-xs bg-black/40 px-2 py-1 rounded">
                   Last: {lastCheck.toLocaleTimeString()}

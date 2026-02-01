@@ -57,12 +57,12 @@ export async function makeVoiceCall(
     const twiml = `
       <Response>
         <Say voice="Polly.Joanna">
-          Hello, this is ${callerName} calling on behalf of Margaret Johnson.
+          Hello, this is ${callerName} calling on behalf of ${config.patient.name}.
           ${message}
         </Say>
         <Pause length="2"/>
         <Say voice="Polly.Joanna">
-          If this is an emergency, please check on Margaret immediately.
+          If this is an emergency, please check on ${config.patient.name.split(' ')[0]} immediately.
           You can also reply to this number via text message.
         </Say>
       </Response>

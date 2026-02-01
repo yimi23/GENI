@@ -22,7 +22,7 @@ export function Dashboard({ onOpenChat, onOpenMedicationHistory, onTriggerEmerge
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <h1 className="text-xl font-semibold text-gray-900">GENI</h1>
+            <img src="/geni-logo.png" alt="GENI" className="h-10 w-auto object-contain" />
             <span className="text-gray-500 text-sm">Margaret's Home</span>
           </div>
           <div className="flex items-center gap-2">
