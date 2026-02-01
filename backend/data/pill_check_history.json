@@ -1,6 +1,16 @@
 {
   "records": [
     {
+      "id": "1769951427394-aeu8qnwcs",
+      "timestamp": 1769951427394,
+      "date": "2/1/2026",
+      "time": "8:10 AM",
+      "status": "unclear",
+      "confidence": "low",
+      "observations": "No pill organizer detected. Image shows: person wearing glasses with a large scissors or cutting tool partially visible above their head, against an orange and white striped background",
+      "method": "vision"
+    },
+    {
       "id": "1769950108039-jviozzfyk",
       "timestamp": 1769950108039,
       "date": "2/1/2026",
@@ -632,13 +642,13 @@
     }
   ],
   "lastCheck": {
-    "id": "1769950108039-jviozzfyk",
-    "timestamp": 1769950108039,
+    "id": "1769951427394-aeu8qnwcs",
+    "timestamp": 1769951427394,
     "date": "2/1/2026",
-    "time": "7:48 AM",
-    "status": "present",
-    "confidence": "high",
-    "observations": "7-day pill organizer with pastel-colored pills (white, blue, pink) in each compartment. Approximately 5-6 pills per day, no compartments empty. Week's medications have not yet been taken.",
+    "time": "8:10 AM",
+    "status": "unclear",
+    "confidence": "low",
+    "observations": "No pill organizer detected. Image shows: person wearing glasses with a large scissors or cutting tool partially visible above their head, against an orange and white striped background",
     "method": "vision"
   }
 }

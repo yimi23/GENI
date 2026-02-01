@@ -1,5 +1,6 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
+import { continuousVision } from './services/continuous-vision';
 
 let io: SocketIOServer;
 
@@ -13,6 +14,19 @@ export function initializeSocket(httpServer: HTTPServer): SocketIOServer {
   
   io.on('connection', (socket) => {
     console.log('✅ Client connected:', socket.id);
+    
+    // Camera pause/resume events
+    socket.on('pause-camera', () => {
+      console.log('📷 Camera pause requested');
+      continuousVision.pause();
+      socket.emit('camera-paused', { status: 'paused' });
+    });
+    
+    socket.on('resume-camera', () => {
+      console.log('📷 Camera resume requested');
+      continuousVision.resume();
+      socket.emit('camera-resumed', { status: 'resumed' });
+    });
     
     socket.on('disconnect', () => {
       console.log('❌ Client disconnected:', socket.id);
@@ -76,5 +90,16 @@ export function emitFallAlert(data: {
 export function emitHardwareStatus(status: any) {
   if (io) {
     io.emit('hardware_status', status);
+  }
+}
+
+export function emitVisionUpdate(data: {
+  timestamp: Date;
+  observation: string;
+  message?: string;
+  concerns: string[];
+}) {
+  if (io) {
+    io.emit('vision_update', data);
   }
 }

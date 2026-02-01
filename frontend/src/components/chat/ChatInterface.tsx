@@ -4,6 +4,8 @@ import { useVoiceVisualizer, VoiceVisualizer } from 'react-voice-visualizer';
 import { api } from '../../services/api';
 import { speak as ttsSpeak } from '../../services/tts';
 import { useContinuousMonitoring } from '../../hooks/useContinuousMonitoring';
+import { useContinuousVision } from '../../hooks/useContinuousVision';
+import { socket } from '../../services/socket';
 
 interface Message {
   sender: 'geni' | 'user';
@@ -70,7 +72,7 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
   const micInitializedRef = useRef(false);
   const recorderControls = useVoiceVisualizer();
   
-  // Continuous monitoring hook
+  // Continuous monitoring hook (OLD - will be replaced by continuous vision)
   const {
     isMonitoring,
     isProcessing: _isAutoChecking,
@@ -79,9 +81,22 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
     startMonitoring,
     stopMonitoring,
   } = useContinuousMonitoring(videoRef, {
-    enabled: true,
-    intervalSeconds: 30, // Check every 30 seconds
-    minIntervalMs: 10000, // Minimum 10 seconds between requests (rate limiting)
+    enabled: false, // DISABLED - using continuous vision instead
+    intervalSeconds: 30,
+    minIntervalMs: 10000,
+  });
+  
+  // NEW: Continuous vision hook (5-second intervals, always running)
+  const {
+    isActive: visionActive,
+    isPaused: visionPaused,
+    lastUpdate: visionUpdate,
+    isProcessing: visionProcessing,
+    pause: pauseVision,
+    resume: resumeVision,
+  } = useContinuousVision(videoRef, {
+    enabled: true, // Auto-start
+    intervalSeconds: 5, // Analyze every 5 seconds
   });
   
   // NO AUTO-SAVE - causes race conditions with manual saves
@@ -363,6 +378,8 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
       setIsRecording(false);
       recorderControls.stopRecording();
       
+      console.log('🎤 Stopped voice recording');
+      
       // Get recorded audio blob
       const audioBlob = await recorderControls.recordedBlob;
       
@@ -413,6 +430,13 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
             // RULE: Voice in → Voice out
             // User spoke to us, so we speak back (they're not looking at screen)
             speak(result.response);
+            
+            // Resume continuous vision after response is complete
+            setTimeout(() => {
+              console.log('✅ Voice interaction complete - resuming vision');
+              resumeVision();
+              socket.emit('resume-camera');
+            }, 1000); // Small delay to let TTS start
           }, 300);
           
         } catch (error) {
@@ -428,15 +452,32 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
           addMessage(errorMessage);
           // Always speak voice-related errors (user is trying to use voice)
           speak(errorMessage.text);
+          
+          // Resume vision even on error
+          setTimeout(() => {
+            console.log('✅ Voice error handled - resuming vision');
+            resumeVision();
+            socket.emit('resume-camera');
+          }, 1000);
         }
       }
     } else {
       try {
         setIsRecording(true);
+        
+        // Pause continuous vision during voice interaction
+        console.log('🎤 Starting voice recording - pausing vision');
+        pauseVision();
+        socket.emit('pause-camera');
+        
         await recorderControls.startRecording();
       } catch (error) {
         console.error('Microphone error:', error);
         setIsRecording(false);
+        
+        // Resume vision if recording failed
+        resumeVision();
+        socket.emit('resume-camera');
         
         const errorMessage: Message = {
           sender: 'geni',

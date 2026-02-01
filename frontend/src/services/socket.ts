@@ -33,3 +33,6 @@ export function disconnectSocket() {
     socket = null;
   }
 }
+
+// Export socket instance (auto-connects on first use)
+export const socket = getSocket();

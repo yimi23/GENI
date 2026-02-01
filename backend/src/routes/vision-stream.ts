@@ -1,0 +1,75 @@
+/**
+ * Continuous Vision Stream Route
+ * Receives frames from frontend and processes them continuously
+ */
+
+import { Router, Request, Response } from 'express';
+import { continuousVision } from '../services/continuous-vision';
+
+const router = Router();
+
+/**
+ * POST /api/vision/analyze
+ * Analyze a single camera frame
+ */
+router.post('/vision/analyze', async (req: Request, res: Response) => {
+  try {
+    const { image } = req.body;
+    
+    if (!image) {
+      return res.status(400).json({ error: 'No image provided' });
+    }
+    
+    // Check if paused
+    if (continuousVision.isPausedStatus()) {
+      return res.json({
+        status: 'paused',
+        message: 'Vision monitoring is paused (voice interaction active)',
+      });
+    }
+    
+    // Extract base64 data (remove data:image/jpeg;base64, prefix if present)
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+    
+    // Analyze frame
+    const analysis = await continuousVision.analyzeFrame(base64Data);
+    
+    // Process and generate contextual output
+    await continuousVision.processAnalysis(analysis);
+    
+    // Return analysis
+    res.json({
+      status: 'success',
+      timestamp: analysis.timestamp,
+      observations: analysis.observations,
+      activity: analysis.activity,
+      pillStatus: analysis.pillStatus,
+      concerns: analysis.concerns,
+      message: analysis.contextualMessage,
+    });
+    
+  } catch (error: any) {
+    console.error('❌ Vision analysis error:', error);
+    res.status(500).json({
+      error: 'Vision analysis failed',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/vision/status
+ * Get current vision monitoring status
+ */
+router.get('/vision/status', (req: Request, res: Response) => {
+  const state = continuousVision.getState();
+  
+  res.json({
+    isPaused: continuousVision.isPausedStatus(),
+    lastAnalysis: state.lastAnalysis,
+    pillsPresentSince: state.pillsPresentSince,
+    consecutiveConcerns: state.consecutiveConcerns,
+  });
+});
+
+export default router;

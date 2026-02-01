@@ -23,6 +23,7 @@ import ttsRouter from './routes/tts';
 import trainingRouter from './routes/training';
 import monitoringRouter from './routes/monitoring';
 import fallDetectionRouter from './routes/fall-detection';
+import visionStreamRouter from './routes/vision-stream';
 
 const app = express();
 const server = http.createServer(app);
@@ -63,6 +64,7 @@ app.use('/api', reportsRouter);
 app.use('/api', ttsRouter);
 app.use('/api', trainingRouter);
 app.use('/api', monitoringRouter);
+app.use('/api', visionStreamRouter);
 
 // Health check
 app.get('/health', (req, res) => {
