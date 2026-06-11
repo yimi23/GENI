@@ -79,7 +79,7 @@ async function analyzeImage(imagePath: string): Promise<AutoLabelResult> {
   
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5',
       max_tokens: 512,
       system: 'You are an image classification system. Output ONLY valid JSON, no other text.',
       messages: [

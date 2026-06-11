@@ -47,7 +47,7 @@ export async function analyzePillImage(imageBase64: string): Promise<PillDetecti
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
     
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022', // Current Haiku 3.5 model
+      model: 'claude-haiku-4-5', // Current Haiku 3.5 model
       max_tokens: 1024,
       system: "You are a computer vision API. You MUST respond with ONLY a valid JSON object, no other text whatsoever. No explanations, no apologies, no markdown. Start with { and end with }.",
       messages: [
@@ -112,7 +112,7 @@ export async function analyzeHumanPresence(imageBase64: string): Promise<HumanDe
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
     
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022', // Current Haiku 3.5 model for human detection
+      model: 'claude-haiku-4-5', // Current Haiku 3.5 model for human detection
       max_tokens: 1024,
       system: "You are a computer vision API. You MUST respond with ONLY a valid JSON object, no other text whatsoever. No explanations, no apologies, no markdown. Start with { and end with }.",
       messages: [

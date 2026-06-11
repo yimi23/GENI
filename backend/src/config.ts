@@ -33,7 +33,7 @@ export const config = {
   
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY || '',
-    visionModel: process.env.ANTHROPIC_VISION_MODEL || 'claude-3-5-haiku-20241022',
+    visionModel: process.env.ANTHROPIC_VISION_MODEL || 'claude-haiku-4-5',
   },
   
   openai: {
