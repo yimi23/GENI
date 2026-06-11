@@ -77,9 +77,30 @@ app.use('/api', monitoringRouter);
 app.use('/api', visionStreamRouter);
 app.use('/api/yolo', yoloEmergencyRouter);
 
-// Health check
+// Health check — reports whether GENI's eyes and voice are actually working,
+// not just that Express is up.
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: Date.now() });
+  const fallDetection = fallDetectionService.getHealth();
+  const degraded =
+    (config.fallDetection.enabled && config.fallDetection.mode === 'camera' && !fallDetection.running) ||
+    fallDetection.degraded;
+
+  res.status(degraded ? 503 : 200).json({
+    status: degraded ? 'degraded' : 'ok',
+    uptimeSeconds: Math.floor(process.uptime()),
+    fallDetection: {
+      enabled: config.fallDetection.enabled,
+      mode: config.fallDetection.mode,
+      ...fallDetection,
+    },
+    ai: {
+      anthropicConfigured: !!config.anthropic.apiKey,
+      openaiConfigured: !!config.openai.apiKey,
+      elevenlabsConfigured: !!config.elevenlabs.apiKey,
+    },
+    messagingEnabled: config.messaging.enabled,
+    timestamp: Date.now(),
+  });
 });
 
 // Global error safety net (must be registered after all routes)

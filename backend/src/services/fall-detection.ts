@@ -36,12 +36,23 @@ interface FrameFallPose {
 }
 
 export class FallDetectionService {
+  getHealth() {
+    return {
+      running: this.isRunning,
+      restartAttempts: this.restartAttempts,
+      degraded: this.degradedAlertSent,
+      lastStartAt: this.lastStartAt,
+      emergencyActive: this.emergencyActive,
+    };
+  }
+
   private pythonProcess: ChildProcess | null = null;
   private isRunning = false;
   private emergencyActive = false;
   private emergencyStartTime: number | null = null;
   private responseTimeout: NodeJS.Timeout | null = null;
   private restartAttempts = 0;
+  private degradedAlertSent = false;
   private lastStartAt: number | null = null;
   private lastImpactAt: number | null = null;
   private impactWindowStart: number | null = null;
@@ -117,6 +128,7 @@ export class FallDetectionService {
         const runtimeMs = this.lastStartAt ? Date.now() - this.lastStartAt : 0;
         if (runtimeMs > this.STABLE_RUN_RESET_MS) {
           this.restartAttempts = 0;
+          this.degradedAlertSent = false;
         }
         
         this.restartAttempts += 1;
@@ -127,6 +139,15 @@ export class FallDetectionService {
         
         if (this.restartAttempts > this.MAX_RESTART_ATTEMPTS) {
           console.warn('⚠️  Fall detection unstable; backing off retries to 5 minutes. Check camera access.');
+          if (!this.degradedAlertSent) {
+            this.degradedAlertSent = true;
+            notifyCaregiver({
+              type: 'general_concern',
+              priority: 'high',
+              message: `Heads up - GENI's fall detection camera keeps stopping and I'm having trouble restarting it. ${options.patient} is NOT currently covered by automatic fall detection. Please check the GENI device when you can. - GENI`,
+              dedupKey: 'fall_detection_degraded',
+            }).catch(() => {});
+          }
         }
         
         const delayLabel = delayMs >= 60000 ? `${Math.round(delayMs / 60000)} minutes` : `${Math.round(delayMs / 1000)} seconds`;
