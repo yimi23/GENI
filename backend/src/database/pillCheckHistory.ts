@@ -1,7 +1,13 @@
-import fs from 'fs';
-import path from 'path';
+/**
+ * Pill check history — SQLite-backed.
+ * Same public API as the old JSON implementation; storage is now durable,
+ * indexed, and no longer capped at 100 records.
+ */
 
-const DB_FILE = path.join(__dirname, '../../data/pill_check_history.json');
+import { db } from '../lib/db';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('pill-history');
 
 export interface PillCheckRecord {
   id: string;
@@ -14,57 +20,33 @@ export interface PillCheckRecord {
   method: 'vision' | 'yolo';
 }
 
-interface Database {
-  records: PillCheckRecord[];
-  lastCheck: PillCheckRecord | null;
-}
+const insertStmt = db.prepare(`
+  INSERT INTO pill_checks (id, timestamp, date, time, status, confidence, observations, method)
+  VALUES (@id, @timestamp, @date, @time, @status, @confidence, @observations, @method)
+`);
 
-// Initialize database file
-function initDatabase(): Database {
-  const dataDir = path.join(__dirname, '../../data');
-  
-  // Create data directory if it doesn't exist
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-  
-  // Create database file if it doesn't exist
-  if (!fs.existsSync(DB_FILE)) {
-    const emptyDb: Database = { records: [], lastCheck: null };
-    fs.writeFileSync(DB_FILE, JSON.stringify(emptyDb, null, 2));
-    return emptyDb;
-  }
-  
-  // Read existing database
-  const data = fs.readFileSync(DB_FILE, 'utf-8');
-  return JSON.parse(data);
-}
+const recentStmt = db.prepare(`
+  SELECT * FROM pill_checks ORDER BY timestamp DESC LIMIT ?
+`);
 
-// Read database
-function readDatabase(): Database {
-  if (!fs.existsSync(DB_FILE)) {
-    return initDatabase();
-  }
-  const data = fs.readFileSync(DB_FILE, 'utf-8');
-  return JSON.parse(data);
-}
+const lastStmt = db.prepare(`
+  SELECT * FROM pill_checks ORDER BY timestamp DESC LIMIT 1
+`);
 
-// Write database
-function writeDatabase(db: Database): void {
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
-}
+const todayStmt = db.prepare(`
+  SELECT * FROM pill_checks WHERE date = ? ORDER BY timestamp DESC
+`);
 
-/**
- * Save a pill check result to history
- */
+const clearOldStmt = db.prepare(`
+  DELETE FROM pill_checks WHERE timestamp <= ?
+`);
+
 export function savePillCheck(
   status: 'present' | 'taken' | 'unclear',
   confidence: 'high' | 'medium' | 'low',
   observations: string,
   method: 'vision' | 'yolo' = 'vision'
 ): PillCheckRecord {
-  const db = readDatabase();
-  
   const now = new Date();
   const record: PillCheckRecord = {
     id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -76,59 +58,29 @@ export function savePillCheck(
     observations,
     method,
   };
-  
-  db.records.unshift(record); // Add to beginning
-  db.lastCheck = record;
-  
-  // Keep only last 100 records
-  if (db.records.length > 100) {
-    db.records = db.records.slice(0, 100);
-  }
-  
-  writeDatabase(db);
-  console.log('💾 Saved pill check to database:', record.id);
-  
+
+  insertStmt.run(record);
+  log.debug({ id: record.id, status }, 'pill check saved');
   return record;
 }
 
-/**
- * Get pill check history
- */
 export function getPillCheckHistory(limit: number = 20): PillCheckRecord[] {
-  const db = readDatabase();
-  return db.records.slice(0, limit);
+  return recentStmt.all(limit) as PillCheckRecord[];
 }
 
-/**
- * Get last pill check
- */
 export function getLastPillCheck(): PillCheckRecord | null {
-  const db = readDatabase();
-  return db.lastCheck;
+  return (lastStmt.get() as PillCheckRecord | undefined) || null;
 }
 
-/**
- * Get pill checks for today
- */
 export function getTodaysPillChecks(): PillCheckRecord[] {
-  const db = readDatabase();
   const today = new Date().toLocaleDateString('en-US');
-  return db.records.filter(r => r.date === today);
+  return todayStmt.all(today) as PillCheckRecord[];
 }
 
-/**
- * Clear old records (older than 30 days)
- */
+/** Clear records older than 30 days. */
 export function clearOldRecords(): number {
-  const db = readDatabase();
-  const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-  
-  const before = db.records.length;
-  db.records = db.records.filter(r => r.timestamp > thirtyDaysAgo);
-  const after = db.records.length;
-  
-  writeDatabase(db);
-  console.log(`🗑️  Cleared ${before - after} old pill check records`);
-  
-  return before - after;
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const result = clearOldStmt.run(thirtyDaysAgo);
+  log.info({ cleared: result.changes }, 'cleared old pill check records');
+  return result.changes;
 }
