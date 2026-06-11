@@ -65,7 +65,9 @@ function getWeekdaysUpTo(targetDay: string): string[] {
     return weekdays;
   }
   
-  return weekdays.slice(0, targetIndex + 1);
+  // Days BEFORE today. Today's compartment isn't 'missed' just because
+  // the patient hasn't taken this morning's dose yet.
+  return weekdays.slice(0, targetIndex);
 }
 
 /**

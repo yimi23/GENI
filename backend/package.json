@@ -8,7 +8,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "augment": "tsc && node dist/scripts/augment-images.js",
-    "auto-label": "tsc && node dist/scripts/auto-label-images.js"
+    "auto-label": "tsc && node dist/scripts/auto-label-images.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
@@ -35,6 +37,7 @@
     "nodemon": "^3.0.2",
     "pino-pretty": "^13.1.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^4.1.8"
   }
 }
