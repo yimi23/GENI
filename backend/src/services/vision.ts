@@ -2,7 +2,7 @@ import { config } from '../config';
 import { PILL_DETECTION_PROMPT } from '../prompts/pillDetection';
 import { HUMAN_DETECTION_PROMPT } from '../prompts/humanDetection';
 
-import { anthropic } from '../lib/anthropic';
+import { anthropic, VISION_MODEL } from '../lib/anthropic';
 
 interface PillDetectionResult {
   status: 'present' | 'taken' | 'unclear';
@@ -44,7 +44,7 @@ export async function analyzePillImage(imageBase64: string): Promise<PillDetecti
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
     
     const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5', // Current Haiku 3.5 model
+      model: VISION_MODEL,
       max_tokens: 1024,
       system: "You are a computer vision API. You MUST respond with ONLY a valid JSON object, no other text whatsoever. No explanations, no apologies, no markdown. Start with { and end with }.",
       messages: [
@@ -109,7 +109,7 @@ export async function analyzeHumanPresence(imageBase64: string): Promise<HumanDe
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
     
     const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5', // Current Haiku 3.5 model for human detection
+      model: VISION_MODEL,
       max_tokens: 1024,
       system: "You are a computer vision API. You MUST respond with ONLY a valid JSON object, no other text whatsoever. No explanations, no apologies, no markdown. Start with { and end with }.",
       messages: [
@@ -160,5 +160,93 @@ export async function analyzeHumanPresence(imageBase64: string): Promise<HumanDe
       confidence: 'low',
       observations: 'Error analyzing image',
     };
+  }
+}
+
+export interface SceneAnalysis {
+  timestamp: Date;
+  observations: string;
+  activity: string; // 'at desk' | 'walking' | 'sitting' | 'lying down' | 'not visible' | 'unclear'
+  pillStatus: 'present' | 'taken' | 'unclear';
+  concerns: string[];
+}
+
+/**
+ * General scene understanding for the continuous monitoring loop:
+ * what is the patient doing, is the pill organizer visible, any concerns.
+ */
+export async function analyzeScene(
+  imageBase64: string,
+  scheduleContext: string
+): Promise<SceneAnalysis> {
+  const fallback: SceneAnalysis = {
+    timestamp: new Date(),
+    observations: 'Analysis unavailable',
+    activity: 'unclear',
+    pillStatus: 'unclear',
+    concerns: [],
+  };
+
+  try {
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+
+    const response = await anthropic.messages.create({
+      model: VISION_MODEL,
+      max_tokens: 300,
+      system:
+        'You are a computer vision API. You MUST respond with ONLY a valid JSON object. No extra text, no markdown. Start with { and end with }.',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: 'image/jpeg', data: base64Data },
+            },
+            {
+              type: 'text',
+              text: `You are GENI, an AI elder care companion monitoring ${config.patient.name}.
+
+Analyze this camera frame and respond in JSON format:
+
+{
+  "observations": "Brief description of what you see",
+  "activity": "at desk" | "walking" | "sitting" | "lying down" | "not visible",
+  "pillStatus": "present" | "taken" | "unclear",
+  "concerns": ["list any concerns"]
+}
+
+Current time: ${new Date().toLocaleTimeString()}
+Current medications schedule: ${scheduleContext}
+
+Focus on:
+1. Is ${config.patient.name} visible and what are they doing?
+2. Can you see the pill organizer? Are pills present or taken?
+3. Any safety concerns (unusual position, fall risk)?
+4. Any changes from typical behavior?
+
+Be concise and factual. Only list real concerns.`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const content = response.content[0];
+    if (content.type !== 'text') return fallback;
+
+    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return { ...fallback, observations: 'Vision response invalid (no JSON).' };
+
+    const analysis = JSON.parse(jsonMatch[0]);
+    return {
+      timestamp: new Date(),
+      observations: analysis.observations || 'No clear observation',
+      activity: analysis.activity || 'unclear',
+      pillStatus: analysis.pillStatus || 'unclear',
+      concerns: Array.isArray(analysis.concerns) ? analysis.concerns : [],
+    };
+  } catch (error) {
+    return fallback;
   }
 }

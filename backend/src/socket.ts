@@ -1,6 +1,6 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
-import { continuousVision } from './services/continuous-vision';
+import { monitoring } from './services/monitoring/core';
 
 let io: SocketIOServer;
 
@@ -18,13 +18,13 @@ export function initializeSocket(httpServer: HTTPServer): SocketIOServer {
     // Camera pause/resume events
     socket.on('pause-camera', () => {
       console.log('📷 Camera pause requested');
-      continuousVision.pause();
+      monitoring.pause();
       socket.emit('camera-paused', { status: 'paused' });
     });
     
     socket.on('resume-camera', () => {
       console.log('📷 Camera resume requested');
-      continuousVision.resume();
+      monitoring.resume();
       socket.emit('camera-resumed', { status: 'resumed' });
     });
     

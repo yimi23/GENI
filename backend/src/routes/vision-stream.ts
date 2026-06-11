@@ -4,8 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { continuousVision } from '../services/continuous-vision';
-import { runVisionPipeline } from '../services/vision-pipeline';
+import { monitoring } from '../services/monitoring/core';
 
 const router = Router();
 
@@ -27,7 +26,7 @@ router.post('/vision/analyze', async (req: Request, res: Response) => {
     const source = req.body.source === 'manual' ? 'manual' : 'continuous';
     
     // Check if paused (only for continuous monitoring)
-    if (source === 'continuous' && continuousVision.isPausedStatus()) {
+    if (source === 'continuous' && monitoring.isPaused()) {
       return res.json({
         status: 'paused',
         message: 'Vision monitoring is paused (voice interaction active)',
@@ -35,7 +34,7 @@ router.post('/vision/analyze', async (req: Request, res: Response) => {
     }
     
     // Analyze frame with unified pipeline
-    const pipeline = await runVisionPipeline(base64Data, { source });
+    const pipeline = await monitoring.processFrame(base64Data, { source });
     
     // Return analysis
     res.json({
@@ -64,10 +63,10 @@ router.post('/vision/analyze', async (req: Request, res: Response) => {
  * Get current vision monitoring status
  */
 router.get('/vision/status', (req: Request, res: Response) => {
-  const state = continuousVision.getState();
+  const state = monitoring.getVisionState();
   
   res.json({
-    isPaused: continuousVision.isPausedStatus(),
+    isPaused: monitoring.isPaused(),
     lastAnalysis: state.lastAnalysis,
     pillsPresentSince: state.pillsPresentSince,
     consecutiveConcerns: state.consecutiveConcerns,

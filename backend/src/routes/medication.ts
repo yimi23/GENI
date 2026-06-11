@@ -3,7 +3,7 @@ import multer from 'multer';
 import { state, addActivity, updateMedicationStatus } from '../state';
 import { emitActivity, emitMedicationUpdate } from '../socket';
 import { getPillCheckHistory, getLastPillCheck } from '../database/pillCheckHistory';
-import { runVisionPipeline } from '../services/vision-pipeline';
+import { monitoring } from '../services/monitoring/core';
 
 const router = Router();
 const upload = multer({ dest: 'uploads/' });
@@ -73,7 +73,7 @@ router.post('/pill-check', upload.single('image'), async (req: Request, res: Res
     const imageBuffer = fs.readFileSync(req.file.path);
     const base64Image = imageBuffer.toString('base64');
     
-    const pipeline = await runVisionPipeline(base64Image, { source: 'manual' });
+    const pipeline = await monitoring.processFrame(base64Image, { source: 'manual' });
     
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);

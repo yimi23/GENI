@@ -4,7 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { unifiedMonitoring } from '../services/unified-monitoring';
+import { monitoring } from '../services/monitoring/core';
 
 const router = Router();
 
@@ -15,7 +15,7 @@ router.post('/monitor/cycle', async (req: Request, res: Response) => {
   try {
     console.log('🔄 Manual monitoring cycle triggered');
     
-    const result = await unifiedMonitoring.performMonitoringCycle();
+    const result = await monitoring.runCycle();
     
     res.json({
       success: true,
@@ -33,8 +33,8 @@ router.post('/monitor/cycle', async (req: Request, res: Response) => {
  */
 router.get('/monitor/status', (req: Request, res: Response) => {
   try {
-    const status = unifiedMonitoring.getStatus();
-    const events = unifiedMonitoring.getRecentEvents(20);
+    const status = monitoring.getStatus();
+    const events = monitoring.getRecentEvents(20);
     
     res.json({
       status,
@@ -53,7 +53,7 @@ router.get('/monitor/status', (req: Request, res: Response) => {
 router.get('/monitor/events', (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
-    const events = unifiedMonitoring.getRecentEvents(limit);
+    const events = monitoring.getRecentEvents(limit);
     
     res.json({
       events,
