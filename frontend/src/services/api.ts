@@ -1,4 +1,5 @@
 const API_URL = (import.meta.env as Record<string, any>).VITE_API_URL || 'http://localhost:5001';
+const API_KEY = (import.meta.env as Record<string, any>).VITE_GENI_API_KEY || '';
 
 // Helper function to add timeout to fetch
 async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs: number = 30000) {
@@ -8,6 +9,10 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
   try {
     const response = await fetch(url, {
       ...options,
+      headers: {
+        ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+        ...(options.headers || {}),
+      },
       signal: controller.signal,
     });
     clearTimeout(timeout);

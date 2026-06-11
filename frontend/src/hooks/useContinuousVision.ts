@@ -13,6 +13,7 @@ import { useState, useEffect, useRef } from 'react';
 import { captureFrameAsDataUrl } from '../lib/frame-capture';
 
 const API_URL = (import.meta.env as Record<string, any>).VITE_API_URL || 'http://localhost:5001';
+const API_KEY = (import.meta.env as Record<string, any>).VITE_GENI_API_KEY || '';
 
 interface VisionUpdate {
   timestamp: Date;
@@ -83,6 +84,7 @@ export function useContinuousVision(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
           },
           body: JSON.stringify({ image: imageBase64, source: 'continuous' }),
           signal: controller.signal,

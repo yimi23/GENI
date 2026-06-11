@@ -44,6 +44,16 @@ export const config = {
     apiKey: process.env.ELEVENLABS_API_KEY || '',
     voiceId: process.env.ELEVENLABS_VOICE_ID || '',
   },
+
+  security: {
+    // Shared secret for device + dashboard. Open API in dev when unset;
+    // production refuses to start without it (see validation below).
+    apiKey: process.env.GENI_API_KEY || '',
+    corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:5173')
+      .split(',')
+      .map(origin => origin.trim())
+      .filter(Boolean),
+  },
 };
 
 // Validate required env vars
@@ -52,6 +62,7 @@ const requiredVars = [
   'TWILIO_AUTH_TOKEN',
   'ANTHROPIC_API_KEY',
   'OPENAI_API_KEY',
+  'GENI_API_KEY',
 ];
 
 if (config.nodeEnv === 'production') {

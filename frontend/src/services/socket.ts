@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = (import.meta.env as Record<string, any>).VITE_API_URL || 'http://localhost:5001';
+const API_KEY = (import.meta.env as Record<string, any>).VITE_GENI_API_KEY || '';
 
 let socketInstance: Socket | null = null;
 let reconnectAttempts = 0;
@@ -10,6 +11,7 @@ export function connectSocket() {
   if (socketInstance) return socketInstance;
   
   socketInstance = io(SOCKET_URL, {
+    auth: API_KEY ? { token: API_KEY } : undefined,
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,

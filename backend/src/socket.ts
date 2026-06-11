@@ -1,17 +1,26 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import { monitoring } from './services/monitoring/core';
+import { config } from './config';
 
 let io: SocketIOServer;
 
 export function initializeSocket(httpServer: HTTPServer): SocketIOServer {
   io = new SocketIOServer(httpServer, {
     cors: {
-      origin: '*',
+      origin: config.security.corsOrigins,
       methods: ['GET', 'POST'],
     },
   });
-  
+
+  // Handshake auth — same shared secret as the REST API
+  io.use((socket, next) => {
+    if (!config.security.apiKey) return next();
+    const token = socket.handshake.auth?.token;
+    if (token === config.security.apiKey) return next();
+    next(new Error('Unauthorized'));
+  });
+
   io.on('connection', (socket) => {
     console.log('✅ Client connected:', socket.id);
     

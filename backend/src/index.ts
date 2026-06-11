@@ -1,11 +1,14 @@
 import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import http from 'http';
 import { config } from './config';
 import { logger } from './lib/logger';
 import { requestContext } from './middleware/request-context';
 import { errorHandler } from './middleware/error-handler';
+import { requireApiKey } from './middleware/auth';
 import { initializeSocket } from './socket';
 import { initializeScheduler } from './services/scheduler';
 import { fallDetectionService } from './services/fall-detection';
@@ -52,10 +55,33 @@ if (config.fallDetection.enabled && config.fallDetection.mode === 'camera') {
 }
 
 // Middleware
-app.use(cors());
+app.use(helmet());
+app.use(
+  cors({
+    origin: config.security.corsOrigins,
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(requestContext);
+app.use(
+  rateLimit({
+    windowMs: 60_000,
+    limit: 300, // generous: continuous vision posts every 30s per device
+    standardHeaders: true,
+    legacyHeaders: false,
+  })
+);
+
+// Auth on everything under /api EXCEPT inbound webhooks (Twilio calls us
+// and signs its own requests; it cannot present our key)
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/webhook') || req.path.startsWith('/twilio')) {
+    return next();
+  }
+  return requireApiKey(req, res, next);
+});
 
 // Routes
 app.use('/api', statusRouter);
