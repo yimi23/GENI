@@ -36,12 +36,10 @@
 - 0 mocks or fakes
 
 ═══════════════════════════════════════════════════════════════════
-🔑 WORKING API KEYS (FROM REMI)
+🔑 API KEYS
 
-Anthropic Claude: sk-ant-api03-Nd7cNN...kavhfgAA
-OpenAI Whisper:   sk-svcacct-zuUv_Tkp...yr_kwA
-
-Both loaded and tested working.
+Configured in the gitignored root .env (ANTHROPIC_API_KEY, OPENAI_API_KEY).
+Never document key values or fragments in tracked files.
 
 ═══════════════════════════════════════════════════════════════════
 🚀 HOW TO START

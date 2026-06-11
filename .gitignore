@@ -44,3 +44,10 @@ coverage/
 # Misc
 *.pem
 .vercel
+
+# Runtime data (patient conversations, pill check history)
+backend/data/
+
+# Model weights (large binaries — keep out of git)
+*.pt
+training-archive-*/

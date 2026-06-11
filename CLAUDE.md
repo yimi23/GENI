@@ -15,24 +15,15 @@
 
 ## Critical Rules (Never Break These)
 
-### 1. Claude Model Names (CRITICAL - FINAL ANSWER!)
-❌ **WRONG:** `claude-3-5-sonnet-20241022` → 404
-❌ **WRONG:** `claude-3-5-sonnet-20240620` → 404  
-❌ **WRONG:** `claude-3-sonnet-20240229` → 404
-✅ **CORRECT:** `claude-3-haiku-20240307` ← **ONLY MODEL THAT WORKS**
+### 1. Claude Model Names
+✅ **CURRENT:** `claude-haiku-4-5` — used everywhere (vision, conversations, brain) as of 2026-06-10.
 
-**Why:** This Anthropic API key doesn't have access to ANY Sonnet models (3.0 or 3.5). Only Haiku is available.
+**History:** The project previously used `claude-3-5-haiku-20241022`, which Anthropic retired on Feb 19, 2026 (404s now). All Claude 3.x models are retired or deprecated. Current model family: `claude-haiku-4-5` (cheap, vision-capable), `claude-sonnet-4-6` (stronger vision/reasoning), `claude-opus-4-8` (most capable Opus tier).
 
-**All attempts:**
-1. `claude-3-5-sonnet-20241022` → 404 not_found_error
-2. `claude-3-5-sonnet-20240620` → 404 not_found_error
-3. `claude-3-sonnet-20240229` → 404 not_found_error
-4. `claude-3-haiku-20240307` → ✅ **WORKS** (all accounts have this)
+**If pill detection accuracy needs a boost:** change `visionModel` in `config.ts` to `claude-sonnet-4-6` ($3/$15 per MTok vs Haiku's $1/$5).
 
-**Final Solution:** Use Haiku for everything (vision, conversations, brain).
-
-**Fixed in:** vision.ts, geni-brain.ts, conversation.ts
-**Date:** 2026-02-01 00:02 AM EST (finally resolved!)
+**Never hardcode dated model IDs** — use aliases like `claude-haiku-4-5` so retirements don't silently break the app again.
+**Updated:** 2026-06-10 (SDK upgraded 0.20 → 0.104)
 
 ### 2. React State + HMR = Data Loss
 ❌ **WRONG:** Store critical data only in React state

@@ -81,15 +81,9 @@ GENI/
 
 ---
 
-## 🔑 API Keys (Already Working)
+## 🔑 API Keys
 
-From your Remi project:
-```
-✅ Anthropic Claude: sk-ant-api03-Nd7cNN...kavhfgAA
-✅ OpenAI Whisper:   sk-svcacct-zuUv_Tkp...yr_kwA
-```
-
-All in ONE `.env` at root. No multiple configs.
+Set `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` in the root `.env` (see `.env.example`). The `.env` file is gitignored — never commit keys or key fragments to the repo.
 
 ---
 
