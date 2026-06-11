@@ -1,7 +1,11 @@
+import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import { config } from './config';
+import { logger } from './lib/logger';
+import { requestContext } from './middleware/request-context';
+import { errorHandler } from './middleware/error-handler';
 import { initializeSocket } from './socket';
 import { initializeScheduler } from './services/scheduler';
 import { fallDetectionService } from './services/fall-detection';
@@ -51,6 +55,7 @@ if (config.fallDetection.enabled && config.fallDetection.mode === 'camera') {
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(requestContext);
 
 // Routes
 app.use('/api', statusRouter);
@@ -76,6 +81,9 @@ app.use('/api/yolo', yoloEmergencyRouter);
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
 });
+
+// Global error safety net (must be registered after all routes)
+app.use(errorHandler);
 
 // Start server
 server.listen(config.port, () => {

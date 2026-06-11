@@ -8,7 +8,7 @@ import path from 'path';
 import { state, addActivity } from '../state';
 import { emitActivity, emitFallAlert, emitFallDetected } from '../socket';
 import { sendWhatsAppMessage } from './twilio';
-import { sendCaregiverUpdate } from './caregiver-updates';
+import { notifyCaregiver } from './notifications';
 
 interface FallEvent {
   timestamp: number;
@@ -179,7 +179,7 @@ export class FallDetectionService {
         });
         // Frontend modal handles audible prompts to avoid overlapping TTS.
         
-        sendCaregiverUpdate({
+        notifyCaregiver({
           type: 'fall_detected',
           priority: 'high',
           message: `GENI detected a sudden impact for ${patientName}. Monitoring for response; will call 911 if no response.`,
@@ -189,7 +189,7 @@ export class FallDetectionService {
         });
         
         if (this.impactCount >= 2) {
-          sendCaregiverUpdate({
+          notifyCaregiver({
             type: 'unusual_activity',
             priority: 'medium',
             message: `GENI detected repeated sudden movements for ${patientName} within the last few minutes. Please check in.`,
@@ -373,9 +373,9 @@ export class FallDetectionService {
     emitFallDetected({ incidentId: this.currentIncidentId });
     // Frontend modal handles audible prompts to avoid overlapping TTS.
     
-    sendCaregiverUpdate({
+    notifyCaregiver({
       type: 'fall_detected',
-      priority: 'urgent',
+      priority: 'critical',
       message: `GENI detected a fall for ${patientName}. Calling 911 now unless cancelled.`,
       details: { confirmationTime: pose.confirmationTime }
     }).catch(error => {

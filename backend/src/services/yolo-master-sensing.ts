@@ -11,7 +11,7 @@
  */
 
 import { buildGENIContext } from './geni-context';
-import { sendCaregiverUpdate } from './caregiver-updates';
+import { notifyCaregiver } from './notifications';
 import { textToSpeech } from './elevenlabs';
 import { state, addActivity } from '../state';
 import { emitActivity } from '../socket';
@@ -65,9 +65,9 @@ export const yoloMasterSensing = {
         ? `EMERGENCY: FALL DETECTED - ${context.patientName} may need immediate assistance`
         : `EMERGENCY: UNRESPONSIVE STATE - ${context.patientName} is not responding`;
 
-      await sendCaregiverUpdate({
+      await notifyCaregiver({
         type: 'unusual_activity',
-        priority: 'urgent',
+        priority: 'critical',
         message: updateMessage,
         details: { alertType: alert.type, timestamp: alert.timestamp },
       });

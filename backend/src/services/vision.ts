@@ -1,11 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../config';
 import { PILL_DETECTION_PROMPT } from '../prompts/pillDetection';
 import { HUMAN_DETECTION_PROMPT } from '../prompts/humanDetection';
 
-const anthropic = new Anthropic({
-  apiKey: config.anthropic.apiKey,
-});
+import { anthropic } from '../lib/anthropic';
 
 interface PillDetectionResult {
   status: 'present' | 'taken' | 'unclear';

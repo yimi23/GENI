@@ -11,7 +11,7 @@ import { shouldInitiateConversation, generateConversationStarter } from './conve
 import { analyzeMedicationAdherence } from './medication-adherence';
 import { state, addActivity } from '../state';
 import { emitActivity, emitSpeak } from '../socket';
-import { notifyMedicationMissed } from './caregiver-updates';
+import { notifyMedicationMissed } from './notifications';
 
 export interface MonitoringEvent {
   timestamp: Date;
@@ -194,13 +194,7 @@ class UnifiedMonitoring {
     // Notify caregiver if high concern
     let notifiedCaregiver = false;
     if (concernLevel === 'high' && context.overdueMedications.length > 0) {
-      await notifyMedicationMissed({
-        name: medName,
-        dosage: context.overdueMedications[0].dosage,
-        time: medTime,
-        status: 'missed',
-        period: context.timeOfDay,
-      });
+      await notifyMedicationMissed({ name: medName, time: medTime });
       notifiedCaregiver = true;
     }
     

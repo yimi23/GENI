@@ -4,14 +4,11 @@
  * NO HARDCODED REPLIES
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import { buildGENIContext, formatContextSummary, type GENIContext } from './geni-context';
 import type { Medication } from '../models/Medication';
 import { config } from '../config';
 
-const anthropic = new Anthropic({
-  apiKey: config.anthropic.apiKey,
-});
+import { anthropic } from '../lib/anthropic';
 
 /**
  * GENI's core personality and instructions

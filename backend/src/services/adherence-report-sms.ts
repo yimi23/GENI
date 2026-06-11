@@ -5,7 +5,7 @@
  */
 
 import { state } from '../state';
-import { sendCaregiverUpdate } from './caregiver-updates';
+import { notifyCaregiver } from './notifications';
 import { buildGENIContext } from './geni-context';
 
 interface DailyAdherence {
@@ -186,8 +186,8 @@ export const adherenceReportService = {
       const message = this.generateReportMessage();
       console.log('📱 Sending adherence report to caregiver via SMS...');
 
-      await sendCaregiverUpdate({
-        type: 'daily_summary',
+      await notifyCaregiver({
+        type: 'weekly_summary',
         priority: 'medium',
         message: message,
         details: this.calculateWeeklyAdherence(),

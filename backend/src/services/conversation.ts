@@ -4,12 +4,9 @@
  */
 
 import { buildGENIContext } from './geni-context';
-import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../config';
 
-const anthropic = new Anthropic({
-  apiKey: config.anthropic.apiKey,
-});
+import { anthropic } from '../lib/anthropic';
 
 /**
  * Determine if GENI should initiate a conversation

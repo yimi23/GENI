@@ -8,7 +8,6 @@ import { emitActivity, emitSpeak } from '../socket';
 import { conversationMemory } from '../services/conversation-memory';
 import { generateFollowUp } from '../services/conversation';
 import { buildGENIContext } from '../services/geni-context';
-import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../config';
 
 const router = Router();
@@ -25,9 +24,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-const anthropic = new Anthropic({
-  apiKey: config.anthropic.apiKey,
-});
+import { anthropic } from '../lib/anthropic';
 
 /**
  * Analyze sentiment from transcribed voice note

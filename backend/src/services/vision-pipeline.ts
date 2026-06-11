@@ -3,7 +3,7 @@ import { emitActivity } from '../socket';
 import { analyzePillImage } from './vision';
 import { analyzeMedicationAdherence, type CompartmentStates } from './medication-adherence';
 import { generatePillCheckResponse } from './geni-brain';
-import { notifyMedicationCheck, shouldNotifyCaregiver, sendCaregiverUpdate } from './caregiver-updates';
+import { notifyPillCheck, notifyCaregiver } from './notifications';
 import { savePillCheck } from '../database/pillCheckHistory';
 import { continuousVision } from './continuous-vision';
 import { conversationMemory } from './conversation-memory';
@@ -128,14 +128,14 @@ export async function runVisionPipeline(
         low: 'low' as const,
         medium: 'medium' as const,
         high: 'high' as const,
-        critical: 'urgent' as const,
+        critical: 'critical' as const,
       };
       
       const concernLevel = adherenceAnalysis.concernLevel as keyof typeof priorityMap;
       const priority = priorityMap[concernLevel];
       
-      if (!suppressPillResponse && shouldNotifyCaregiver('medication_check', priority)) {
-        sendCaregiverUpdate({
+      if (!suppressPillResponse) {
+        notifyCaregiver({
           type: 'medication_check',
           priority,
           message: adherenceAnalysis.caregiverAlertMessage,
@@ -155,8 +155,8 @@ export async function runVisionPipeline(
       observations: observations,
     });
     
-    if (shouldNotifyCaregiver('medication_check', pillResult.status === 'unclear' ? 'medium' : 'low')) {
-      notifyMedicationCheck({
+    {
+      notifyPillCheck({
         status: pillResult.status as 'taken' | 'present' | 'unclear',
         observations: observations,
         method,

@@ -9,15 +9,12 @@
  * - Confirmation periods before acting
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../config';
 import { emitVisionUpdate, emitSpeak } from '../socket';
 import { state, addActivity } from '../state';
 import { conversationMemory } from './conversation-memory';
 
-const anthropic = new Anthropic({
-  apiKey: config.anthropic.apiKey,
-});
+import { anthropic } from '../lib/anthropic';
 
 interface VisionAnalysis {
   timestamp: Date;

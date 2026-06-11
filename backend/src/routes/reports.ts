@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { generateDailyReport, sendDailyReportToCaregiver } from '../services/reporting';
 import { sendWeeklySummaryToCaregiver } from '../services/proactive';
-import { generateContextualAlert, sendAlertToCaregiver, sendReassuranceMessage } from '../services/alerts';
+import { buildAlert, sendAlert, sendReassurance } from '../services/notifications';
 import { testScheduler } from '../services/scheduler';
 import { healthReportService } from '../services/health-report-sms';
 import { adherenceReportService } from '../services/adherence-report-sms';
@@ -72,7 +72,7 @@ router.post('/reports/test-alert', async (req: Request, res: Response) => {
   try {
     const { event, medication, symptom, timeElapsed } = req.body;
     
-    const alert = generateContextualAlert({
+    const alert = buildAlert({
       event: event || 'missed_medication',
       medication,
       symptom,
@@ -97,13 +97,13 @@ router.post('/reports/send-alert', async (req: Request, res: Response) => {
   try {
     const { event, medication, symptom, timeElapsed, additionalContext } = req.body;
     
-    const success = await sendAlertToCaregiver({
+    const success = await sendAlert({
       event: event || 'general_concern',
       medication,
       symptom,
       timeElapsed,
       additionalContext
-    });
+    }, true);
     
     if (success) {
       res.json({
@@ -127,7 +127,7 @@ router.post('/reports/send-alert', async (req: Request, res: Response) => {
  */
 router.post('/reports/reassurance', async (req: Request, res: Response) => {
   try {
-    const success = await sendReassuranceMessage();
+    const success = await sendReassurance(true);
     
     if (success) {
       res.json({

@@ -5,7 +5,7 @@
  */
 
 import { state } from '../state';
-import { sendCaregiverUpdate } from './caregiver-updates';
+import { notifyCaregiver } from './notifications';
 import { buildGENIContext } from './geni-context';
 
 interface HealthMetrics {
@@ -139,7 +139,7 @@ export const healthReportService = {
       const message = this.generateReportMessage();
       console.log('📱 Sending report to caregiver via SMS...');
 
-      await sendCaregiverUpdate({
+      await notifyCaregiver({
         type: 'daily_summary',
         priority: 'medium',
         message: message,
