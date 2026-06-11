@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { api } from '../services/api';
+import { captureFrameAsDataUrl } from '../lib/frame-capture';
 
 const API_URL = (import.meta.env as Record<string, any>).VITE_API_URL || 'http://localhost:5001';
 
@@ -59,42 +59,6 @@ export function useContinuousVision(
   const mountedRef = useRef(true);
   
   /**
-   * Capture frame from video element
-   */
-  const captureFrame = (): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      if (!videoRef.current) {
-        reject(new Error('Video element not found'));
-        return;
-      }
-      
-      const video = videoRef.current;
-      
-      // Check if video is ready
-      if (video.readyState < 2) {
-        reject(new Error('Video not ready'));
-        return;
-      }
-      
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Could not get canvas context'));
-        return;
-      }
-      
-      ctx.drawImage(video, 0, 0);
-      
-      // Convert to base64 JPEG
-      const base64 = canvas.toDataURL('image/jpeg', 0.8);
-      resolve(base64);
-    });
-  };
-  
-  /**
    * Send frame to backend for analysis
    */
   const analyzeFrame = async () => {
@@ -106,7 +70,7 @@ export function useContinuousVision(
       setIsProcessing(true);
       
       console.log('📸 Continuous vision: Capturing frame...');
-      const imageBase64 = await captureFrame();
+      const imageBase64 = captureFrameAsDataUrl(videoRef.current, 0.8);
       
       console.log('🔍 Continuous vision: Sending to backend...');
       

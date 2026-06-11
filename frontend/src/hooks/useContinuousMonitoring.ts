@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
+import { captureFrameAsBlob } from '../lib/frame-capture';
 
 interface MonitoringConfig {
   enabled: boolean;
@@ -31,35 +32,6 @@ export function useContinuousMonitoring(
   const lastRequestTime = useRef<number>(0);
   const mountedRef = useRef(true);
 
-  const captureFrame = (): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      if (!videoRef.current) {
-        reject(new Error('Video element not found'));
-        return;
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Could not get canvas context'));
-        return;
-      }
-
-      ctx.drawImage(videoRef.current, 0, 0);
-      
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Failed to create image blob'));
-        }
-      }, 'image/jpeg', 0.9);
-    });
-  };
-
   const analyzeFrame = async () => {
     // Rate limiting check
     const now = Date.now();
@@ -78,7 +50,7 @@ export function useContinuousMonitoring(
       lastRequestTime.current = now;
 
       console.log('📸 Continuous monitoring: Capturing frame...');
-      const imageBlob = await captureFrame();
+      const imageBlob = await captureFrameAsBlob(videoRef.current, 0.9);
       
       console.log('🔍 Continuous monitoring: Analyzing...');
       const result = await api.checkPills(imageBlob);

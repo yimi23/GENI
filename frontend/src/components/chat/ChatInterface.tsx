@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { captureFrameAsBlob } from '../../lib/frame-capture';
 import { LayoutDashboard, Mic, Volume2, AlertOctagon, Camera, PlayCircle, PauseCircle } from 'lucide-react';
 import { useVoiceVisualizer, VoiceVisualizer } from 'react-voice-visualizer';
 import { api } from '../../services/api';
@@ -270,35 +271,6 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
     }
   };
 
-  const captureImageFromVideo = (): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      if (!videoRef.current) {
-        reject(new Error('Video element not found'));
-        return;
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Could not get canvas context'));
-        return;
-      }
-
-      ctx.drawImage(videoRef.current, 0, 0);
-      
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Failed to create image blob'));
-        }
-      }, 'image/jpeg', 0.9);
-    });
-  };
-
   const handleCheckPills = async (triggeredByVoice: boolean = false) => {
     console.log('🔔 handleCheckPills called, triggeredByVoice:', triggeredByVoice);
     console.log('📷 Camera active:', cameraActive);
@@ -336,7 +308,7 @@ export function ChatInterface({ onBackToDashboard, onTriggerEmergency }: ChatInt
     // NO hardcoded messages - let GENI brain handle everything
     try {
       console.log('📸 Capturing image from video...');
-      const imageBlob = await captureImageFromVideo();
+      const imageBlob = await captureFrameAsBlob(videoRef.current, 0.9);
       console.log('✅ Image captured, size:', imageBlob.size);
       
       console.log('🔍 Sending to pill check API... (this may take 5-10 seconds)');
