@@ -4,6 +4,70 @@ import { HUMAN_DETECTION_PROMPT } from '../prompts/humanDetection';
 
 import { anthropic, VISION_MODEL } from '../lib/anthropic';
 
+
+const DAY_STATE = { type: 'string', enum: ['empty', 'full', 'unclear'] } as const;
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+// JSON schemas enforced via structured outputs — the API guarantees the
+// response parses, so no regex extraction or "got conversational text"
+// failure mode exists anymore.
+const PILL_SCHEMA = {
+  type: 'object',
+  properties: {
+    status: { type: 'string', enum: ['present', 'taken', 'unclear'] },
+    confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
+    compartments: {
+      type: 'object',
+      properties: Object.fromEntries(DAYS.map(d => [d, DAY_STATE])),
+      additionalProperties: false,
+    },
+    pillCounts: {
+      type: 'object',
+      properties: Object.fromEntries(DAYS.map(d => [d, { type: 'integer' }])),
+      additionalProperties: false,
+    },
+    overallStatus: {
+      type: 'string',
+      enum: ['all-taken', 'partial-adherence', 'no-adherence', 'unclear', 'no-organizer-detected'],
+    },
+    observations: { type: 'string' },
+  },
+  required: ['status', 'confidence', 'observations'],
+  additionalProperties: false,
+};
+
+const HUMAN_SCHEMA = {
+  type: 'object',
+  properties: {
+    humanPresent: { type: 'boolean' },
+    count: { type: 'integer' },
+    positions: {
+      type: 'array',
+      items: { type: 'string', enum: ['standing', 'sitting', 'lying', 'fallen', 'walking', 'unclear'] },
+    },
+    fallDetected: { type: 'boolean' },
+    confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
+    observations: { type: 'string' },
+  },
+  required: ['humanPresent', 'count', 'positions', 'fallDetected', 'confidence', 'observations'],
+  additionalProperties: false,
+};
+
+const SCENE_SCHEMA = {
+  type: 'object',
+  properties: {
+    observations: { type: 'string' },
+    activity: {
+      type: 'string',
+      enum: ['at desk', 'walking', 'sitting', 'lying down', 'not visible', 'unclear'],
+    },
+    pillStatus: { type: 'string', enum: ['present', 'taken', 'unclear'] },
+    concerns: { type: 'array', items: { type: 'string' } },
+  },
+  required: ['observations', 'activity', 'pillStatus', 'concerns'],
+  additionalProperties: false,
+};
+
 interface PillDetectionResult {
   status: 'present' | 'taken' | 'unclear';
   confidence: 'high' | 'medium' | 'low';
@@ -66,28 +130,11 @@ export async function analyzePillImage(imageBase64: string): Promise<PillDetecti
           ],
         },
       ],
+      output_config: { format: { type: 'json_schema', schema: PILL_SCHEMA } },
     });
     
     const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-    console.log('🔍 Raw vision response:', responseText);
-    
-    // Extract JSON from response (may have markdown formatting)
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    
-    if (!jsonMatch) {
-      console.error('❌ No JSON found in vision response. Got conversational text instead.');
-      console.error('First 200 chars:', responseText.substring(0, 200));
-      return {
-        status: 'unclear',
-        confidence: 'low',
-        observations: 'Vision API returned invalid format (no JSON). This may indicate a prompt issue.',
-      };
-    }
-    
-    const jsonStr = jsonMatch[0];
-    const result: PillDetectionResult = JSON.parse(jsonStr);
-    
-    console.log('💊 Pill analysis:', result);
+    const result: PillDetectionResult = JSON.parse(responseText);
     return result;
     
   } catch (error: any) {
@@ -131,17 +178,11 @@ export async function analyzeHumanPresence(imageBase64: string): Promise<HumanDe
           ],
         },
       ],
+      output_config: { format: { type: 'json_schema', schema: HUMAN_SCHEMA } },
     });
     
     const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-    console.log('🔍 Raw human detection response:', responseText);
-    
-    // Extract JSON from response (may have markdown formatting)
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    const jsonStr = jsonMatch ? jsonMatch[0] : responseText;
-    const result: HumanDetectionResult = JSON.parse(jsonStr);
-    
-    console.log('👤 Human analysis:', result);
+    const result: HumanDetectionResult = JSON.parse(responseText);
     
     // CRITICAL: If fall detected, log alert
     if (result.fallDetected) {
@@ -230,22 +271,14 @@ Be concise and factual. Only list real concerns.`,
           ],
         },
       ],
+      output_config: { format: { type: 'json_schema', schema: SCENE_SCHEMA } },
     });
 
     const content = response.content[0];
     if (content.type !== 'text') return fallback;
 
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return { ...fallback, observations: 'Vision response invalid (no JSON).' };
-
-    const analysis = JSON.parse(jsonMatch[0]);
-    return {
-      timestamp: new Date(),
-      observations: analysis.observations || 'No clear observation',
-      activity: analysis.activity || 'unclear',
-      pillStatus: analysis.pillStatus || 'unclear',
-      concerns: Array.isArray(analysis.concerns) ? analysis.concerns : [],
-    };
+    const analysis = JSON.parse(content.text);
+    return { timestamp: new Date(), ...analysis };
   } catch (error) {
     return fallback;
   }

@@ -157,12 +157,25 @@ GENI:`;
           content: prompt,
         },
       ],
+      output_config: {
+        format: {
+          type: 'json_schema',
+          schema: {
+            type: 'object',
+            properties: {
+              response: { type: 'string' },
+              shouldAskFollowUp: { type: 'boolean' },
+              reasoning: { type: 'string' },
+            },
+            required: ['response', 'shouldAskFollowUp', 'reasoning'],
+            additionalProperties: false,
+          },
+        },
+      },
     });
     
     const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    const jsonStr = jsonMatch ? jsonMatch[0] : responseText;
-    const result = JSON.parse(jsonStr);
+    const result = JSON.parse(responseText);
     
     console.log('💬 Follow-up:', result.shouldAskFollowUp ? 'Yes' : 'No', '-', result.reasoning);
     
