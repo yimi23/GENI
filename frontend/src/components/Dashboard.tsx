@@ -23,7 +23,7 @@ export function Dashboard({ onOpenChat, onOpenMedicationHistory, onTriggerEmerge
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <img src="/geni-logo.png" alt="GENI" className="h-10 w-auto object-contain" />
-            <span className="text-gray-500 text-sm">Margaret's Home</span>
+            <span className="text-gray-500 text-sm">{data?.patient?.name ? `${data.patient.name.split(' ')[0]}'s Home` : 'Home'}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
@@ -37,7 +37,7 @@ export function Dashboard({ onOpenChat, onOpenMedicationHistory, onTriggerEmerge
         {/* Top Row - Profile + Medications */}
         <div className="grid grid-cols-12 gap-4 mb-4">
           <div className="col-span-4">
-            <ProfileCard />
+            <ProfileCard patient={data?.patient} contacts={data?.contacts} />
           </div>
           <div className="col-span-8">
             <MedicationCard />
@@ -51,7 +51,7 @@ export function Dashboard({ onOpenChat, onOpenMedicationHistory, onTriggerEmerge
           </div>
           <div className="col-span-8">
             <div className="grid grid-cols-2 gap-4">
-              <ContactsCard contacts={data?.contacts} />
+              <ContactsCard contacts={data?.contacts} patientName={data?.patient?.name} />
               <RemindersCard />
             </div>
           </div>

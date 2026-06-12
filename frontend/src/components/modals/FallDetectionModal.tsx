@@ -7,11 +7,15 @@ interface FallDetectionModalProps {
   isOpen: boolean;
   incidentId?: string | null;
   onClose: () => void;
+  patientName?: string;
+  contacts?: { name: string; relationship: string; isPrimary?: boolean }[];
 }
 
 type ModalStage = 'alert' | 'countdown' | 'notifying' | 'confirmed';
 
-export function FallDetectionModal({ isOpen, incidentId, onClose }: FallDetectionModalProps) {
+export function FallDetectionModal({ isOpen, incidentId, onClose, patientName, contacts }: FallDetectionModalProps) {
+  const displayName = patientName || 'the patient';
+  const notifyList = (contacts || []).map(c => `${c.name} (${c.relationship})`);
   const [stage, setStage] = useState<ModalStage>('alert');
   const [timeLeft, setTimeLeft] = useState(15);
   const [notificationStatus, setNotificationStatus] = useState<{name: string; status: 'sending' | 'sent'}[]>([]);
@@ -150,14 +154,14 @@ export function FallDetectionModal({ isOpen, incidentId, onClose }: FallDetectio
       // Simulated 911 call script (local TTS only)
       speak('Calling 911 now.');
       speak('Dispatcher: 911, what is your emergency?');
-      speak('GENI: This is GENI, an elder care system. Possible fall detected for Margaret Johnson. No response.');
+      speak(`GENI: This is GENI, an elder care system. Possible fall detected for ${displayName}. No response.`);
       speak('Dispatcher: What is the location?');
       speak('GENI: Please dispatch emergency services. A caregiver has been notified.');
       speak('Dispatcher: Help is on the way.');
     }
     
     setNotificationStatus([
-      { name: 'Sarah (Daughter)', status: 'sending' }
+      { name: notifyList[0] || 'Primary caregiver', status: 'sending' }
     ]);
 
     setTimeout(() => {
@@ -168,7 +172,7 @@ export function FallDetectionModal({ isOpen, incidentId, onClose }: FallDetectio
       setTimeout(() => {
         setNotificationStatus(prev => [
           ...prev,
-          { name: 'Dr. Johnson', status: 'sending' }
+          { name: notifyList[1] || 'Secondary contact', status: 'sending' }
         ]);
         
         setTimeout(() => {

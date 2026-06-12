@@ -16,7 +16,7 @@ import json
 os.environ['YOLO_VERBOSE'] = 'False'
 
 class FallDetectionSystem:
-    def __init__(self, patient_name="Margaret", camera_index=0):
+    def __init__(self, patient_name="Patient", camera_index=0):
         """Initialize fall detection system"""
         self.patient_name = patient_name
         self.model = YOLO('yolov8n-pose.pt')
@@ -256,7 +256,7 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="GENI Fall Detection System")
-    parser.add_argument("--patient", default="Margaret", help="Patient name")
+    parser.add_argument("--patient", default="Patient", help="Patient name")
     parser.add_argument("--camera", type=int, default=0, help="Camera index")
     parser.add_argument("--headless", action="store_true", help="Run without display (production)")
     

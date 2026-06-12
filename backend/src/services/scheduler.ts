@@ -7,6 +7,7 @@ import { emitSpeak } from '../socket';
 import { healthReportService } from './health-report-sms';
 import { adherenceReportService } from './adherence-report-sms';
 import { moduleLogger } from '../lib/logger';
+import { config } from '../config';
 import { monitoring } from './monitoring/core';
 
 const log = moduleLogger('scheduler');
@@ -26,7 +27,7 @@ export function initializeScheduler() {
       log.error({ err: error }, 'Error sending daily health report:');
     }
   }, {
-    timezone: 'America/Detroit'
+    timezone: config.timezone
   });
 
   // Weekly medication adherence report SMS: Sunday at 6:00 PM
@@ -38,7 +39,7 @@ export function initializeScheduler() {
       log.error({ err: error }, 'Error sending adherence report:');
     }
   }, {
-    timezone: 'America/Detroit'
+    timezone: config.timezone
   });
   
   // Daily report: 9:00 PM every day
@@ -46,7 +47,7 @@ export function initializeScheduler() {
     log.info('📊 Running daily report...');
     await sendDailyReportToCaregiver();
   }, {
-    timezone: 'America/Detroit'
+    timezone: config.timezone
   });
   
   // Weekly summary: Sunday at 8:00 PM
@@ -54,7 +55,7 @@ export function initializeScheduler() {
     log.info('📊 Running weekly summary...');
     await sendWeeklySummaryToCaregiver();
   }, {
-    timezone: 'America/Detroit'
+    timezone: config.timezone
   });
   
   // Unified monitoring cycle: every 15 min (8 AM - 10 PM). The core throttles
@@ -68,7 +69,7 @@ export function initializeScheduler() {
       log.error({ err: error }, 'monitoring cycle failed');
     }
   }, {
-    timezone: 'America/Detroit'
+    timezone: config.timezone
   });
   
   // Morning greeting: 8:00 AM every day
@@ -78,7 +79,7 @@ export function initializeScheduler() {
     addActivity(`GENI: ${starter}`, 'system');
     emitSpeak(starter);
   }, {
-    timezone: 'America/Detroit'
+    timezone: config.timezone
   });
   
   log.info('scheduler initialized: monitoring cycle */15 8-22, reports daily 9pm + weekly Sun, morning greeting 8am');

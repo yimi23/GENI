@@ -11,35 +11,24 @@ interface Contact {
 
 interface ContactsCardProps {
   contacts?: Contact[];
+  patientName?: string;
 }
 
-export function ContactsCard({ contacts: propsContacts }: ContactsCardProps) {
+export function ContactsCard({ contacts: propsContacts, patientName }: ContactsCardProps) {
+  const displayName = patientName || 'The patient';
   const [calling, setCalling] = useState<string | null>(null);
   const [messaging, setMessaging] = useState<string | null>(null);
   
-  // Use provided contacts or fallback to defaults
-  const contacts = propsContacts || [
-    {
-      name: 'Sarah Johnson',
-      relationship: 'Daughter',
-      phone: '555-123-4567',
-      isPrimary: true
-    },
-    {
-      name: 'Dr. Smith',
-      relationship: 'Primary Care',
-      phone: '555-987-6543'
-    }
-  ];
+  const contacts = propsContacts || [];
 
   const handleCall = async (contact: Contact) => {
     try {
       setCalling(contact.name);
       
       if (contact.relationship.includes('Doctor') || contact.relationship.includes('Primary Care')) {
-        await api.callDoctor(contact.name, 'Margaret requested to speak with you');
+        await api.callDoctor(contact.name, `${displayName} requested to speak with you`);
       } else {
-        await api.callCaregiver(contact.name, 'Margaret wants to speak with you');
+        await api.callCaregiver(contact.name, `${displayName} wants to speak with you`);
       }
       
       // Show success notification (you could use a toast library here)

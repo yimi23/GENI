@@ -6,6 +6,7 @@
 
 import { db } from '../lib/db';
 import { moduleLogger } from '../lib/logger';
+import type { MedicationHistory } from '../models/Medication';
 
 const log = moduleLogger('pill-history');
 
@@ -83,4 +84,53 @@ export function clearOldRecords(): number {
   const result = clearOldStmt.run(thirtyDaysAgo);
   log.info({ cleared: result.changes }, 'cleared old pill check records');
   return result.changes;
+}
+
+const dayRangeStmt = db.prepare(`
+  SELECT * FROM pill_checks WHERE timestamp >= ? AND timestamp < ? ORDER BY timestamp ASC
+`);
+
+/**
+ * Medication history derived from REAL pill-check records (last `days` days)
+ * — replaces the hardcoded demo history that previously lived in state.ts.
+ */
+export function getDerivedMedicationHistory(days: number = 7): MedicationHistory[] {
+  const history: MedicationHistory[] = [];
+  const now = new Date();
+
+  for (let i = days - 1; i >= 0; i--) {
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+    const records = dayRangeStmt.all(dayStart.getTime(), dayEnd.getTime()) as PillCheckRecord[];
+
+    const takenCount = records.filter(r => r.status === 'taken').length;
+    const presentCount = records.filter(r => r.status === 'present').length;
+
+    let status: MedicationHistory['status'];
+    if (i === 0) {
+      status = 'today';
+    } else if (records.length === 0) {
+      status = 'none';
+    } else if (takenCount > 0 && presentCount === 0) {
+      status = 'all-taken';
+    } else if (takenCount > 0) {
+      status = 'partial';
+    } else {
+      status = 'none';
+    }
+
+    history.push({
+      date: dayStart.toISOString().slice(0, 10),
+      day: dayStart.toLocaleDateString('en-US', { weekday: 'short' }),
+      dayNumber: dayStart.getDate(),
+      status,
+      details: records.map(r => ({
+        time: r.time,
+        medication: `Pill check (${r.method})`,
+        status: r.status === 'taken' ? ('taken' as const) : ('missed' as const),
+      })),
+    });
+  }
+
+  return history;
 }

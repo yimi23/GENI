@@ -152,6 +152,8 @@ export default function App() {
         isOpen={showFallModal}
         incidentId={fallIncidentId}
         onClose={() => setShowFallModal(false)}
+        patientName={data?.patient?.name}
+        contacts={data?.contacts}
       />
     </>
   );

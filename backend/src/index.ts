@@ -49,7 +49,7 @@ initializeScheduler();
 if (config.fallDetection.enabled && config.fallDetection.mode === 'camera') {
   fallDetectionService.start({
     patient: config.patient.name,
-    camera: 0,
+    camera: config.fallDetection.cameraIndex,
     headless: true, // No window in production
   });
   log.info('🚨 Fall detection started (YOLO pose estimation)');

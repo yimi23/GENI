@@ -7,13 +7,17 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 const nodeEnv = process.env.NODE_ENV || 'development';
 
 export const config = {
-  port: parseInt(process.env.PORT || '5000'),
+  // 5001 default: macOS AirPlay occupies 5000 on every Mac
+  port: parseInt(process.env.PORT || '5001'),
   nodeEnv,
   
   patient: {
-    name: process.env.PATIENT_NAME || 'Margaret',
-    caregiverPhone: process.env.CAREGIVER_PHONE || '',
+    // Resolved from data/profile.json at boot (state.ts); env overrides.
+    name: process.env.PATIENT_NAME || '',
   },
+
+  // IANA timezone for schedules/reports; defaults to the system timezone
+  timezone: process.env.GENI_TIMEZONE || Intl.DateTimeFormat().resolvedOptions().timeZone,
   
   messaging: {
     enabled: process.env.GENI_ENABLE_MESSAGING === 'true' || nodeEnv === 'production',
@@ -22,13 +26,14 @@ export const config = {
   fallDetection: {
     enabled: process.env.GENI_ENABLE_FALL_DETECTION === 'true' || nodeEnv === 'production',
     mode: (process.env.GENI_FALL_DETECTION_MODE || 'frame') as 'frame' | 'camera',
+    cameraIndex: parseInt(process.env.GENI_CAMERA_INDEX || '0'),
   },
   
   twilio: {
     accountSid: process.env.TWILIO_ACCOUNT_SID || '',
     authToken: process.env.TWILIO_AUTH_TOKEN || '',
-    whatsappNumber: process.env.TWILIO_WHATSAPP_NUMBER || '+14155238886',
-    phoneNumber: process.env.TWILIO_PHONE_NUMBER || '+14155238886', // For voice calls
+    whatsappNumber: process.env.TWILIO_WHATSAPP_NUMBER || '',
+    phoneNumber: process.env.TWILIO_PHONE_NUMBER || '',
   },
   
   anthropic: {
