@@ -57,7 +57,7 @@ export async function sendSMS(to: string, message: string): Promise<boolean> {
  * Make voice call to caregiver or doctor
  * @param to - Phone number to call
  * @param message - TwiML message to speak
- * @param callerName - Name of caller (GENI, Margaret, etc.)
+ * @param callerName - Name of caller (GENI or the patient)
  */
 export async function makeVoiceCall(
   to: string, 
