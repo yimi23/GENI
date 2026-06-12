@@ -1,5 +1,8 @@
 import twilio from 'twilio';
 import { config } from '../config';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('twilio');
 
 const client = twilio(config.twilio.accountSid, config.twilio.authToken);
 const isMessagingEnabled = () => config.messaging.enabled;
@@ -9,7 +12,7 @@ const isMessagingEnabled = () => config.messaging.enabled;
  */
 export async function sendWhatsAppMessage(to: string, message: string): Promise<boolean> {
   if (!isMessagingEnabled()) {
-    console.log('ℹ️ Messaging disabled; skipping WhatsApp send.');
+    log.info('ℹ️ Messaging disabled; skipping WhatsApp send.');
     return false;
   }
   try {
@@ -19,10 +22,10 @@ export async function sendWhatsAppMessage(to: string, message: string): Promise<
       body: message,
     });
     
-    console.log(`✅ WhatsApp sent to ${to}: ${result.sid}`);
+    log.info(`✅ WhatsApp sent to ${to}: ${result.sid}`);
     return true;
   } catch (error) {
-    console.error('❌ WhatsApp send failed:', error);
+    log.error({ err: error }, '❌ WhatsApp send failed:');
     return false;
   }
 }
@@ -32,7 +35,7 @@ export async function sendWhatsAppMessage(to: string, message: string): Promise<
  */
 export async function sendSMS(to: string, message: string): Promise<boolean> {
   if (!isMessagingEnabled()) {
-    console.log('ℹ️ Messaging disabled; skipping SMS send.');
+    log.info('ℹ️ Messaging disabled; skipping SMS send.');
     return false;
   }
   try {
@@ -42,10 +45,10 @@ export async function sendSMS(to: string, message: string): Promise<boolean> {
       body: message,
     });
     
-    console.log(`✅ SMS sent to ${to}: ${result.sid}`);
+    log.info(`✅ SMS sent to ${to}: ${result.sid}`);
     return true;
   } catch (error) {
-    console.error('❌ SMS send failed:', error);
+    log.error({ err: error }, '❌ SMS send failed:');
     return false;
   }
 }
@@ -62,7 +65,7 @@ export async function makeVoiceCall(
   callerName: string = 'GENI'
 ): Promise<boolean> {
   if (!isMessagingEnabled()) {
-    console.log('ℹ️ Messaging disabled; skipping voice call.');
+    log.info('ℹ️ Messaging disabled; skipping voice call.');
     return false;
   }
   try {
@@ -87,10 +90,10 @@ export async function makeVoiceCall(
       twiml: twiml,
     });
     
-    console.log(`📞 Voice call initiated to ${to}: ${call.sid}`);
+    log.info(`📞 Voice call initiated to ${to}: ${call.sid}`);
     return true;
   } catch (error) {
-    console.error('❌ Voice call failed:', error);
+    log.error({ err: error }, '❌ Voice call failed:');
     return false;
   }
 }

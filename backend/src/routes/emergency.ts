@@ -2,6 +2,9 @@ import { Router, Request, Response } from 'express';
 import { sendEmergencyAlert } from '../services/twilio';
 import { state, addActivity } from '../state';
 import { emitActivity, emitFallDetected } from '../socket';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('emergency');
 
 const router = Router();
 
@@ -32,7 +35,7 @@ router.post('/emergency', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('❌ Emergency error:', error);
+    log.error({ err: error }, '❌ Emergency error:');
     res.status(500).json({ error: 'Failed to process emergency' });
   }
 });
@@ -49,7 +52,7 @@ router.post('/button-pressed', async (req: Request, res: Response) => {
     res.json({ success: true });
     
   } catch (error) {
-    console.error('❌ Button press error:', error);
+    log.error({ err: error }, '❌ Button press error:');
     res.status(500).json({ error: 'Failed to process button press' });
   }
 });

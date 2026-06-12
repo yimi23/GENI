@@ -7,6 +7,9 @@
 import { Router, Request, Response } from 'express';
 import { yoloMasterSensing } from '../services/yolo-master-sensing';
 import { getIO } from '../socket';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('yolo-emergency');
 
 const router = Router();
 
@@ -18,7 +21,7 @@ router.post('/emergency', async (req: Request, res: Response) => {
   try {
     const { type, timestamp, confidence, detected_at_frame, person_detected } = req.body;
 
-    console.log(`[YOLO API] Emergency alert received: ${type}`);
+    log.info(`[YOLO API] Emergency alert received: ${type}`);
 
     if (!type || !timestamp) {
       return res.status(400).json({ error: 'Missing required fields: type, timestamp' });
@@ -49,7 +52,7 @@ router.post('/emergency', async (req: Request, res: Response) => {
       emergency_in_progress: yoloMasterSensing.emergencyInProgress 
     });
   } catch (error) {
-    console.error('[YOLO API] Error:', error);
+    log.error({ err: error }, '[YOLO API] Error:');
     res.status(500).json({ error: 'Failed to process emergency alert' });
   }
 });

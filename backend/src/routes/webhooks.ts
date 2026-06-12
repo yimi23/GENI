@@ -1,6 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { addActivity } from '../state';
 import { emitActivity, emitIncomingMessage } from '../socket';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('webhooks');
 
 const router = Router();
 
@@ -9,7 +12,7 @@ router.post('/webhook/twilio', async (req: Request, res: Response) => {
   try {
     const { From, Body, ProfileName } = req.body;
     
-    console.log('📨 Incoming WhatsApp:', { From, Body, ProfileName });
+    log.info({ from: From, profileName: ProfileName }, 'incoming WhatsApp message');
     
     // Parse phone number
     const fromNumber = From.replace('whatsapp:', '');
@@ -34,7 +37,7 @@ router.post('/webhook/twilio', async (req: Request, res: Response) => {
     res.send('<Response></Response>');
     
   } catch (error) {
-    console.error('❌ Webhook error:', error);
+    log.error({ err: error }, '❌ Webhook error:');
     res.status(500).send('<Response></Response>');
   }
 });

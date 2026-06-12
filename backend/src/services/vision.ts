@@ -3,6 +3,9 @@ import { PILL_DETECTION_PROMPT } from '../prompts/pillDetection';
 import { HUMAN_DETECTION_PROMPT } from '../prompts/humanDetection';
 
 import { anthropic, VISION_MODEL } from '../lib/anthropic';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('vision');
 
 
 const DAY_STATE = { type: 'string', enum: ['empty', 'full', 'unclear'] } as const;
@@ -138,10 +141,9 @@ export async function analyzePillImage(imageBase64: string): Promise<PillDetecti
     return result;
     
   } catch (error: any) {
-    console.error('❌ Pill vision analysis failed:');
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Full error:', JSON.stringify(error, null, 2));
+    log.error('❌ Pill vision analysis failed:');
+    log.error({ err: error.name }, 'Error name:');
+    log.error({ err: error.message }, 'Error message:');
     return {
       status: 'unclear',
       confidence: 'low',
@@ -186,13 +188,13 @@ export async function analyzeHumanPresence(imageBase64: string): Promise<HumanDe
     
     // CRITICAL: If fall detected, log alert
     if (result.fallDetected) {
-      console.error('🚨 FALL DETECTED:', result.observations);
+      log.error({ err: result.observations }, '🚨 FALL DETECTED:');
     }
     
     return result;
     
   } catch (error) {
-    console.error('❌ Human vision analysis failed:', error);
+    log.error({ err: error }, '❌ Human vision analysis failed:');
     return {
       humanPresent: false,
       count: 0,

@@ -9,6 +9,9 @@ import { state, addActivity } from '../state';
 import { emitActivity, emitFallAlert, emitFallDetected } from '../socket';
 import { sendWhatsAppMessage } from './twilio';
 import { notifyCaregiver } from './notifications';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('fall-detection');
 
 interface FallEvent {
   timestamp: number;
@@ -77,7 +80,7 @@ export class FallDetectionService {
    */
   start(options: { patient?: string; camera?: number; headless?: boolean } = {}) {
     if (this.isRunning) {
-      console.log('⚠️  Fall detection already running');
+      log.info('⚠️  Fall detection already running');
       return;
     }
     
@@ -91,7 +94,7 @@ export class FallDetectionService {
       args.push('--headless'); // Production mode (no window)
     }
     
-    console.log('🚀 Starting fall detection:', args.join(' '));
+    log.info({ args: args.join(' ') }, 'starting fall detection');
     
     this.pythonProcess = spawn('python3', args);
     this.isRunning = true;
@@ -107,19 +110,19 @@ export class FallDetectionService {
           this.handleEvent(event);
         } catch (error) {
           // Not JSON - probably debug output
-          console.log('[Fall Detection]', line);
+          log.info({ detail: line }, '[Fall Detection]');
         }
       });
     });
     
     // Listen to stderr (errors)
     this.pythonProcess.stderr?.on('data', (data: Buffer) => {
-      console.error('❌ Fall detection error:', data.toString());
+      log.error({ stderr: data.toString() }, 'fall detection stderr');
     });
     
     // Handle process exit
     this.pythonProcess.on('exit', (code, signal) => {
-      console.log(`🛑 Fall detection process exited: code=${code}, signal=${signal}`);
+      log.info(`🛑 Fall detection process exited: code=${code}, signal=${signal}`);
       this.isRunning = false;
       this.pythonProcess = null;
       
@@ -138,7 +141,7 @@ export class FallDetectionService {
             : this.RESTART_DELAY_MS;
         
         if (this.restartAttempts > this.MAX_RESTART_ATTEMPTS) {
-          console.warn('⚠️  Fall detection unstable; backing off retries to 5 minutes. Check camera access.');
+          log.warn('⚠️  Fall detection unstable; backing off retries to 5 minutes. Check camera access.');
           if (!this.degradedAlertSent) {
             this.degradedAlertSent = true;
             notifyCaregiver({
@@ -151,7 +154,7 @@ export class FallDetectionService {
         }
         
         const delayLabel = delayMs >= 60000 ? `${Math.round(delayMs / 60000)} minutes` : `${Math.round(delayMs / 1000)} seconds`;
-        console.log(`🔄 Restarting fall detection in ${delayLabel}... (attempt ${this.restartAttempts})`);
+        log.info(`🔄 Restarting fall detection in ${delayLabel}... (attempt ${this.restartAttempts})`);
         setTimeout(() => this.start(options), delayMs);
       }
     });
@@ -206,7 +209,7 @@ export class FallDetectionService {
           message: `GENI detected a sudden impact for ${patientName}. Monitoring for response; will call 911 if no response.`,
           details: { impactCount: this.impactCount }
         }).catch(error => {
-          console.error('❌ Failed to notify caregiver of impact:', error);
+          log.error({ err: error }, '❌ Failed to notify caregiver of impact:');
         });
         
         if (this.impactCount >= 2) {
@@ -216,7 +219,7 @@ export class FallDetectionService {
             message: `GENI detected repeated sudden movements for ${patientName} within the last few minutes. Please check in.`,
             details: { impactCount: this.impactCount }
           }).catch(error => {
-            console.error('❌ Failed to send caregiver impact update:', error);
+            log.error({ err: error }, '❌ Failed to send caregiver impact update:');
           });
         }
       }
@@ -245,11 +248,11 @@ export class FallDetectionService {
    */
   stop() {
     if (!this.isRunning || !this.pythonProcess) {
-      console.log('⚠️  Fall detection not running');
+      log.info('⚠️  Fall detection not running');
       return;
     }
     
-    console.log('🛑 Stopping fall detection...');
+    log.info('🛑 Stopping fall detection...');
     this.pythonProcess.kill('SIGTERM');
     this.isRunning = false;
     this.pythonProcess = null;
@@ -264,7 +267,7 @@ export class FallDetectionService {
    * Handle events from Python script
    */
   private async handleEvent(event: FallEvent) {
-    console.log(`[${event.level.toUpperCase()}] ${event.message}`, event.data || '');
+    log.info({ level: event.level, data: event.data }, event.message);
     
     switch (event.level) {
       case 'info':
@@ -324,7 +327,7 @@ export class FallDetectionService {
    * Handle error events
    */
   private handleError(event: FallEvent) {
-    console.error('❌ Fall detection error:', event.message, event.data);
+    log.error({ data: event.data }, `fall detection error: ${event.message}`);
     
     // Log error activity
     const activity = addActivity(`Fall detection error: ${event.message}`, 'system');
@@ -336,14 +339,14 @@ export class FallDetectionService {
    */
   private async handleEmergency(event: FallEvent) {
     if (this.emergencyActive) {
-      console.log('⚠️  Emergency already active, ignoring duplicate');
+      log.info('⚠️  Emergency already active, ignoring duplicate');
       return;
     }
     
     this.emergencyActive = true;
     this.emergencyStartTime = Date.now();
     
-    console.log('🚨 FALL DETECTED - INITIATING EMERGENCY RESPONSE');
+    log.info('🚨 FALL DETECTED - INITIATING EMERGENCY RESPONSE');
     
     // 1. Log to database
     const activity = addActivity(
@@ -400,7 +403,7 @@ export class FallDetectionService {
       message: `GENI detected a fall for ${patientName}. Calling 911 now unless cancelled.`,
       details: { confirmationTime: pose.confirmationTime }
     }).catch(error => {
-      console.error('❌ Failed to notify caregiver of 911 decision:', error);
+      log.error({ err: error }, '❌ Failed to notify caregiver of 911 decision:');
     });
     
     const event: FallEvent = {
@@ -420,7 +423,7 @@ export class FallDetectionService {
   }
 
   private simulateEmergencyCall(event: FallEvent) {
-    console.log('📞 Simulating 911 call...');
+    log.info('📞 Simulating 911 call...');
     const activity = addActivity('Simulated 911 call initiated', 'emergency');
     emitActivity(activity);
     // Frontend modal handles audible prompts to avoid overlapping TTS.
@@ -433,7 +436,7 @@ export class FallDetectionService {
     const primaryContact = state.contacts.find(c => c.isPrimary);
     
     if (!primaryContact) {
-      console.error('❌ No primary contact configured');
+      log.error('❌ No primary contact configured');
       return;
     }
     
@@ -452,9 +455,9 @@ If ${event.patient} is okay, they can cancel this alert in the GENI app.
 - GENI Fall Detection System`;
     
     try {
-      console.log('📱 Sending emergency WhatsApp to:', primaryContact.name);
+      log.info({ detail: primaryContact.name }, '📱 Sending emergency WhatsApp to:');
       await sendWhatsAppMessage(primaryContact.phone, message);
-      console.log('✅ Emergency alert sent to caregiver');
+      log.info('✅ Emergency alert sent to caregiver');
       
       // Log activity
       const activity = addActivity(
@@ -464,7 +467,7 @@ If ${event.patient} is okay, they can cancel this alert in the GENI app.
       emitActivity(activity);
       
     } catch (error) {
-      console.error('❌ Failed to send emergency WhatsApp:', error);
+      log.error({ err: error }, '❌ Failed to send emergency WhatsApp:');
       
       // Log failure
       const activity = addActivity(
@@ -479,7 +482,7 @@ If ${event.patient} is okay, they can cancel this alert in the GENI app.
    * Escalate emergency if no response
    */
   private async escalateEmergency(event: FallEvent) {
-    console.log('🚨 NO RESPONSE - ESCALATING EMERGENCY');
+    log.info('🚨 NO RESPONSE - ESCALATING EMERGENCY');
     
     // Send to ALL contacts
     const allContacts = state.contacts;
@@ -500,10 +503,10 @@ Consider calling emergency services (911) if you cannot reach ${event.patient}.
     
     for (const contact of allContacts) {
       try {
-        console.log('📱 Sending escalation to:', contact.name);
+        log.info({ detail: contact.name }, '📱 Sending escalation to:');
         await sendWhatsAppMessage(contact.phone, escalationMessage);
       } catch (error) {
-        console.error(`❌ Failed to send to ${contact.name}:`, error);
+        log.error({ err: error }, `❌ Failed to send to ${contact.name}:`);
       }
     }
     
@@ -527,11 +530,11 @@ Consider calling emergency services (911) if you cannot reach ${event.patient}.
    */
   confirmOK() {
     if (!this.emergencyActive) {
-      console.log('⚠️  No active emergency to confirm');
+      log.info('⚠️  No active emergency to confirm');
       return false;
     }
     
-    console.log('✅ User confirmed OK - canceling emergency');
+    log.info('✅ User confirmed OK - canceling emergency');
     
     const duration = this.emergencyStartTime 
       ? Math.round((Date.now() - this.emergencyStartTime) / 1000)
@@ -593,9 +596,9 @@ The fall alert has been cancelled.
     
     try {
       await sendWhatsAppMessage(primaryContact.phone, message);
-      console.log('✅ False alarm notification sent');
+      log.info('✅ False alarm notification sent');
     } catch (error) {
-      console.error('❌ Failed to send false alarm notification:', error);
+      log.error({ err: error }, '❌ Failed to send false alarm notification:');
     }
   }
   

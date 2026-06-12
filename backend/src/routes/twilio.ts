@@ -3,6 +3,9 @@ import twilio from 'twilio';
 import { addActivity, state } from '../state';
 import { emitActivity, emitIncomingMessage } from '../socket';
 import { config } from '../config';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('twilio');
 
 const MessagingResponse = twilio.twiml.MessagingResponse;
 const VoiceResponse = twilio.twiml.VoiceResponse;
@@ -17,7 +20,7 @@ router.post('/webhook/message', (req: Request, res: Response) => {
   try {
     const { From, Body, ProfileName } = req.body;
     
-    console.log(`📨 Incoming message from ${From} (${ProfileName}): ${Body}`);
+    log.info(`📨 Incoming message from ${From} (${ProfileName}): ${Body}`);
     
     // Parse sender info
     const senderPhone = From.replace('whatsapp:', '');
@@ -53,7 +56,7 @@ router.post('/webhook/message', (req: Request, res: Response) => {
     res.send(twiml.toString());
     
   } catch (error) {
-    console.error('❌ Webhook error:', error);
+    log.error({ err: error }, '❌ Webhook error:');
     res.status(500).send('Error processing message');
   }
 });
@@ -66,7 +69,7 @@ router.post('/webhook/voice', (req: Request, res: Response) => {
   try {
     const { From, CallStatus } = req.body;
     
-    console.log(`📞 Voice call status from ${From}: ${CallStatus}`);
+    log.info(`📞 Voice call status from ${From}: ${CallStatus}`);
     
     const twiml = new VoiceResponse();
     
@@ -93,7 +96,7 @@ router.post('/webhook/voice', (req: Request, res: Response) => {
     res.send(twiml.toString());
     
   } catch (error) {
-    console.error('❌ Voice webhook error:', error);
+    log.error({ err: error }, '❌ Voice webhook error:');
     res.status(500).send('Error');
   }
 });
@@ -125,7 +128,7 @@ router.post('/webhook/voice/confirm', (req: Request, res: Response) => {
 router.post('/webhook/status', (req: Request, res: Response) => {
   const { MessageStatus, CallStatus, To } = req.body;
   
-  console.log(`📊 Status update for ${To}:`, MessageStatus || CallStatus);
+  log.info({ to: To, status: MessageStatus || CallStatus }, 'delivery status update');
   
   res.sendStatus(200);
 });

@@ -2,6 +2,9 @@ import { state, getPrimaryContact } from '../state';
 import { sendWhatsAppMessage } from './twilio';
 import { addActivity } from '../state';
 import { config } from '../config';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('reporting');
 
 /**
  * Generate end-of-day summary for caregiver
@@ -71,7 +74,7 @@ ${medSummary}
 export async function sendDailyReportToCaregiver(): Promise<boolean> {
   const primaryContact = getPrimaryContact();
   if (!primaryContact) {
-    console.log('⚠️  No primary contact found for daily report');
+    log.info('⚠️  No primary contact found for daily report');
     return false;
   }
   
@@ -81,9 +84,9 @@ export async function sendDailyReportToCaregiver(): Promise<boolean> {
   
   if (success) {
     addActivity(`Daily report sent to ${primaryContact.name}`, 'system');
-    console.log(`✅ Daily report sent to ${primaryContact.name}`);
+    log.info(`✅ Daily report sent to ${primaryContact.name}`);
   } else {
-    console.error('❌ Failed to send daily report');
+    log.error('❌ Failed to send daily report');
   }
   
   return success;

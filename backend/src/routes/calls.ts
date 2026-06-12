@@ -3,6 +3,9 @@ import { makeVoiceCall, callDoctor } from '../services/twilio';
 import { state, addActivity } from '../state';
 import { emitActivity } from '../socket';
 import { config } from '../config';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('calls');
 
 const router = Router();
 
@@ -41,7 +44,7 @@ router.post('/call/caregiver', async (req: Request, res: Response) => {
     }
     
   } catch (error) {
-    console.error('❌ Call caregiver error:', error);
+    log.error({ err: error }, '❌ Call caregiver error:');
     res.status(500).json({ error: 'Failed to call caregiver' });
   }
 });
@@ -77,7 +80,7 @@ router.post('/call/doctor', async (req: Request, res: Response) => {
     }
     
   } catch (error) {
-    console.error('❌ Call doctor error:', error);
+    log.error({ err: error }, '❌ Call doctor error:');
     res.status(500).json({ error: 'Failed to call doctor' });
   }
 });
@@ -111,7 +114,7 @@ router.post('/call/emergency', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('❌ Emergency call error:', error);
+    log.error({ err: error }, '❌ Emergency call error:');
     res.status(500).json({ error: 'Failed to make emergency calls' });
   }
 });

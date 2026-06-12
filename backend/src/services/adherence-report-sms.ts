@@ -7,6 +7,9 @@
 import { state } from '../state';
 import { notifyCaregiver } from './notifications';
 import { buildGENIContext } from './geni-context';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('adherence-report-sms');
 
 interface DailyAdherence {
   date: string;
@@ -181,10 +184,10 @@ export const adherenceReportService = {
    */
   async sendWeeklyReport(): Promise<void> {
     try {
-      console.log('💊 Generating weekly adherence report...');
+      log.info('💊 Generating weekly adherence report...');
 
       const message = this.generateReportMessage();
-      console.log('📱 Sending adherence report to caregiver via SMS...');
+      log.info('📱 Sending adherence report to caregiver via SMS...');
 
       await notifyCaregiver({
         type: 'weekly_summary',
@@ -196,9 +199,9 @@ export const adherenceReportService = {
       this.lastReportSentAt = new Date();
       this.reportsSentCount++;
 
-      console.log(`✅ Weekly adherence report sent (Total: ${this.reportsSentCount})`);
+      log.info(`✅ Weekly adherence report sent (Total: ${this.reportsSentCount})`);
     } catch (error) {
-      console.error('❌ Failed to send adherence report:', error);
+      log.error({ err: error }, '❌ Failed to send adherence report:');
       throw error;
     }
   },

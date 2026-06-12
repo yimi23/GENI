@@ -5,6 +5,9 @@ import { buildAlert, sendAlert, sendReassurance } from '../services/notification
 import { testScheduler } from '../services/scheduler';
 import { healthReportService } from '../services/health-report-sms';
 import { adherenceReportService } from '../services/adherence-report-sms';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('reports');
 
 const router = Router();
 
@@ -20,7 +23,7 @@ router.get('/reports/daily', (req: Request, res: Response) => {
       note: 'This is a preview. Use POST to send via WhatsApp.'
     });
   } catch (error) {
-    console.error('❌ Daily report preview error:', error);
+    log.error({ err: error }, '❌ Daily report preview error:');
     res.status(500).json({ error: 'Failed to generate daily report' });
   }
 });
@@ -44,7 +47,7 @@ router.post('/reports/daily', async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.error('❌ Send daily report error:', error);
+    log.error({ err: error }, '❌ Send daily report error:');
     res.status(500).json({ error: 'Failed to send daily report' });
   }
 });
@@ -60,7 +63,7 @@ router.post('/reports/weekly', async (req: Request, res: Response) => {
       message: 'Weekly summary sent to caregiver'
     });
   } catch (error) {
-    console.error('❌ Send weekly summary error:', error);
+    log.error({ err: error }, '❌ Send weekly summary error:');
     res.status(500).json({ error: 'Failed to send weekly summary' });
   }
 });
@@ -85,7 +88,7 @@ router.post('/reports/test-alert', async (req: Request, res: Response) => {
       note: 'This is a preview. Use /api/reports/send-alert to actually send.'
     });
   } catch (error) {
-    console.error('❌ Test alert error:', error);
+    log.error({ err: error }, '❌ Test alert error:');
     res.status(500).json({ error: 'Failed to generate test alert' });
   }
 });
@@ -117,7 +120,7 @@ router.post('/reports/send-alert', async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.error('❌ Send alert error:', error);
+    log.error({ err: error }, '❌ Send alert error:');
     res.status(500).json({ error: 'Failed to send alert' });
   }
 });
@@ -141,7 +144,7 @@ router.post('/reports/reassurance', async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.error('❌ Send reassurance error:', error);
+    log.error({ err: error }, '❌ Send reassurance error:');
     res.status(500).json({ error: 'Failed to send reassurance' });
   }
 });
@@ -157,7 +160,7 @@ router.post('/reports/test-scheduler', async (req: Request, res: Response) => {
       message: 'All scheduled tasks executed (check console for details)'
     });
   } catch (error) {
-    console.error('❌ Test scheduler error:', error);
+    log.error({ err: error }, '❌ Test scheduler error:');
     res.status(500).json({ error: 'Failed to test scheduler' });
   }
 });
@@ -186,11 +189,11 @@ router.get('/status', (req: Request, res: Response) => {
  */
 router.post('/health/send-now', async (req: Request, res: Response) => {
   try {
-    console.log('📊 Manual health report triggered');
+    log.info('📊 Manual health report triggered');
     await healthReportService.sendDailyReport();
     res.json({ status: 'success', message: 'Health report sent' });
   } catch (error) {
-    console.error('Error sending health report:', error);
+    log.error({ err: error }, 'Error sending health report:');
     res.status(500).json({ error: 'Failed to send health report' });
   }
 });
@@ -200,11 +203,11 @@ router.post('/health/send-now', async (req: Request, res: Response) => {
  */
 router.post('/adherence/send-now', async (req: Request, res: Response) => {
   try {
-    console.log('💊 Manual adherence report triggered');
+    log.info('💊 Manual adherence report triggered');
     await adherenceReportService.sendWeeklyReport();
     res.json({ status: 'success', message: 'Adherence report sent' });
   } catch (error) {
-    console.error('Error sending adherence report:', error);
+    log.error({ err: error }, 'Error sending adherence report:');
     res.status(500).json({ error: 'Failed to send adherence report' });
   }
 });

@@ -8,6 +8,9 @@ import {
 } from '../services/proactive';
 import { addActivity } from '../state';
 import { emitActivity, emitSpeak } from '../socket';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('proactive');
 
 const router = Router();
 
@@ -34,7 +37,7 @@ router.post('/proactive/check', async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.error('❌ Proactive check error:', error);
+    log.error({ err: error }, '❌ Proactive check error:');
     res.status(500).json({ error: 'Failed to check proactive actions' });
   }
 });
@@ -52,7 +55,7 @@ router.post('/proactive/morning-briefing', (req: Request, res: Response) => {
       briefing
     });
   } catch (error) {
-    console.error('❌ Morning briefing error:', error);
+    log.error({ err: error }, '❌ Morning briefing error:');
     res.status(500).json({ error: 'Failed to generate briefing' });
   }
 });
@@ -66,7 +69,7 @@ router.post('/proactive/health-check', async (req: Request, res: Response) => {
       message: 'Health check initiated'
     });
   } catch (error) {
-    console.error('❌ Health check error:', error);
+    log.error({ err: error }, '❌ Health check error:');
     res.status(500).json({ error: 'Failed to perform health check' });
   }
 });
@@ -80,7 +83,7 @@ router.post('/proactive/weekly-summary', async (req: Request, res: Response) => 
       message: 'Weekly summary sent'
     });
   } catch (error) {
-    console.error('❌ Weekly summary error:', error);
+    log.error({ err: error }, '❌ Weekly summary error:');
     res.status(500).json({ error: 'Failed to send weekly summary' });
   }
 });

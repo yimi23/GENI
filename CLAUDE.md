@@ -94,19 +94,19 @@ User Input → GENI Brain (Context) → Rich Prompt → Claude → Response
 
 ### Caregiver Updates Pattern
 ```
-Event → Build Context → Check Priority + Time → Send WhatsApp/SMS
+Event → notifyCaregiver() → ONE gate (quiet hours by priority + dedup with escalation override) → WhatsApp/SMS
 ```
 
-**Never:** Send updates at inappropriate times (late night)
-**Always:** Use `shouldNotifyCaregiver()` to check timing
+**Never:** Send caregiver messages through any path except `services/notifications.ts`
+**Always:** Let the gate decide timing — critical always sends, escalations always pass dedup
 
 ### Continuous Monitoring Pattern
 ```
-Camera → Capture Frame (30s interval) → Vision API → Context Response → UI Update
+Camera → monitoring.processFrame() → fall pose → scene analysis → pill check → notifications
 ```
 
-**Never:** Spam API (rate limiting: 10s minimum between calls)
-**Always:** Check `isProcessing` before new request
+**Never:** Add a new vision pipeline — attach a listener to the monitoring core's events instead
+**Always:** Check `isProcessing` before new request; all AI JSON uses structured outputs (output_config json_schema), never regex extraction
 
 ---
 
@@ -138,25 +138,22 @@ Camera → Capture Frame (30s interval) → Vision API → Context Response → 
 
 ## File Organization
 
-### Backend Services
-- `geni-brain.ts` - Core conversational AI (Claude prompts)
-- `geni-context.ts` - Context engine (state → prompt data)
-- `conversation.ts` - Proactive conversations & follow-ups
-- `caregiver-updates.ts` - WhatsApp/SMS to family
-- `vision.ts` - Pill & human detection (Claude Vision)
-- `elevenlabs.ts` - TTS (human voice)
-- `scheduler.ts` - Cron jobs (proactive check-ins, reports)
+### Backend (post-rebuild, June 2026)
+- `lib/` - db.ts (SQLite/WAL), logger.ts (pino — use moduleLogger, never console), anthropic.ts (shared client, 30s timeout)
+- `middleware/` - auth (GENI_API_KEY), request-context (request IDs), error-handler (global net)
+- `services/monitoring/core.ts` - THE monitoring loop (frame path + time-based cycle, EventEmitter)
+- `services/notifications.ts` - THE caregiver-messaging path (gate: quiet hours + dedup)
+- `services/vision.ts` - all Claude Vision calls (structured outputs)
+- `services/geni-brain.ts` / `geni-context.ts` - context engine
+- `services/fall-detection.ts` - Python YOLO supervision + degraded-state circuit breaker
 
-### Frontend Components
+### Frontend
 - `ChatInterface.tsx` - Main conversation UI
-- `GeniLogoAnimation.tsx` - Loading screen
-- `useContinuousMonitoring.ts` - Auto-monitoring hook
+- `lib/frame-capture.ts` - the ONLY frame-capture implementation
+- `useContinuousMonitoring.ts` / `useContinuousVision.ts` - monitoring hooks
 
-### Documentation
-- `GENI_BRAIN.md` - Architecture overview
-- `GENI_VOICE.md` - Voice & personality guide
-- `CONVERSATIONAL_GENI.md` - Conversation features
-- `CONTINUOUS_MONITORING.md` - Auto-monitoring system
+### Tests
+- `backend/src/services/__tests__/` - vitest; `npm test`. CI runs tsc + tests on every push.
 
 ---
 
@@ -171,24 +168,6 @@ Before committing:
 - [ ] Monitoring survives HMR (doesn't stop on code changes)
 - [ ] No hardcoded patient names
 - [ ] No fake timestamps
-
----
-
-## Parallel Development Workflow
-
-### Worktrees Setup
-- **Main:** `/Users/yimi/Desktop/GENI` - Production work
-- **Testing:** `../GENI-worktrees/testing` - Test features
-- **Docs:** `../GENI-worktrees/docs` - Documentation
-- **Features:** `../GENI-worktrees/features` - New features
-
-### Shell Aliases (Add to ~/.zshrc or ~/.bashrc)
-```bash
-alias zm='cd /Users/yimi/Desktop/GENI'
-alias zt='cd /Users/yimi/Desktop/GENI-worktrees/testing'
-alias zd='cd /Users/yimi/Desktop/GENI-worktrees/docs'
-alias zf='cd /Users/yimi/Desktop/GENI-worktrees/features'
-```
 
 ---
 

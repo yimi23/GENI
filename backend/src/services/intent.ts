@@ -4,6 +4,9 @@
  */
 
 import { generateResponse as geniBrainResponse } from './geni-brain';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('intent');
 
 export interface Intent {
   intent: 'medication_confirm' | 'medication_query' | 'send_message' | 'call_contact' | 'general_query' | 'emergency';
@@ -78,11 +81,11 @@ export async function parseIntent(userMessage: string): Promise<Intent> {
  */
 export async function generateResponse(userMessage: string, conversationHistory: { role: 'user' | 'assistant'; text: string }[] = []): Promise<string> {
   try {
-    console.log('🧠 Generating contextual response via GENI brain');
+    log.info('🧠 Generating contextual response via GENI brain');
     const response = await geniBrainResponse(userMessage, conversationHistory);
     return response;
   } catch (error) {
-    console.error('❌ GENI brain error:', error);
+    log.error({ err: error }, '❌ GENI brain error:');
     // Even fallback should be semi-contextual
     return "I'm having a bit of trouble thinking right now. Can you try again?";
   }

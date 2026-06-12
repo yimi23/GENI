@@ -7,20 +7,23 @@ import { shouldInitiateConversation, generateConversationStarter } from './conve
 import { emitSpeak } from '../socket';
 import { healthReportService } from './health-report-sms';
 import { adherenceReportService } from './adherence-report-sms';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('scheduler');
 
 /**
  * Initialize all scheduled tasks
  */
 export function initializeScheduler() {
-  console.log('⏰ Initializing scheduler...');
+  log.info('⏰ Initializing scheduler...');
   
   // Daily health report SMS: 8:00 AM every day
   cron.schedule('0 8 * * *', async () => {
-    console.log('📊 Running daily health report SMS...');
+    log.info('📊 Running daily health report SMS...');
     try {
       await healthReportService.sendDailyReport();
     } catch (error) {
-      console.error('Error sending daily health report:', error);
+      log.error({ err: error }, 'Error sending daily health report:');
     }
   }, {
     timezone: 'America/Detroit'
@@ -28,11 +31,11 @@ export function initializeScheduler() {
 
   // Weekly medication adherence report SMS: Sunday at 6:00 PM
   cron.schedule('0 18 * * 0', async () => {
-    console.log('💊 Running weekly adherence report SMS...');
+    log.info('💊 Running weekly adherence report SMS...');
     try {
       await adherenceReportService.sendWeeklyReport();
     } catch (error) {
-      console.error('Error sending adherence report:', error);
+      log.error({ err: error }, 'Error sending adherence report:');
     }
   }, {
     timezone: 'America/Detroit'
@@ -40,7 +43,7 @@ export function initializeScheduler() {
   
   // Daily report: 9:00 PM every day
   cron.schedule('0 21 * * *', async () => {
-    console.log('📊 Running daily report...');
+    log.info('📊 Running daily report...');
     await sendDailyReportToCaregiver();
   }, {
     timezone: 'America/Detroit'
@@ -48,7 +51,7 @@ export function initializeScheduler() {
   
   // Weekly summary: Sunday at 8:00 PM
   cron.schedule('0 20 * * 0', async () => {
-    console.log('📊 Running weekly summary...');
+    log.info('📊 Running weekly summary...');
     await sendWeeklySummaryToCaregiver();
   }, {
     timezone: 'America/Detroit'
@@ -56,7 +59,7 @@ export function initializeScheduler() {
   
   // Medication adherence check: Every 30 minutes (9 AM - 9 PM)
   cron.schedule('*/30 9-21 * * *', async () => {
-    console.log('💊 Checking medication adherence...');
+    log.info('💊 Checking medication adherence...');
     await checkMedicationAdherence();
   }, {
     timezone: 'America/Detroit'
@@ -64,7 +67,7 @@ export function initializeScheduler() {
   
   // Proactive health check: Every 2 hours (9 AM - 9 PM)
   cron.schedule('0 9-21/2 * * *', async () => {
-    console.log('🏥 Running proactive health check...');
+    log.info('🏥 Running proactive health check...');
     await proactiveHealthCheck();
   }, {
     timezone: 'America/Detroit'
@@ -72,7 +75,7 @@ export function initializeScheduler() {
   
   // Morning greeting: 8:00 AM every day
   cron.schedule('0 8 * * *', async () => {
-    console.log('☀️ Good morning check triggered');
+    log.info('☀️ Good morning check triggered');
     const starter = await generateConversationStarter('morning-greeting');
     addActivity(`GENI: ${starter}`, 'system');
     emitSpeak(starter);
@@ -84,7 +87,7 @@ export function initializeScheduler() {
   cron.schedule('0 9-21 * * *', async () => {
     const { shouldStart, reason } = shouldInitiateConversation();
     if (shouldStart) {
-      console.log('💬 Initiating proactive conversation:', reason);
+      log.info({ detail: reason }, '💬 Initiating proactive conversation:');
       const starter = await generateConversationStarter(reason);
       addActivity(`GENI: ${starter}`, 'system');
       emitSpeak(starter);
@@ -93,32 +96,32 @@ export function initializeScheduler() {
     timezone: 'America/Detroit'
   });
   
-  console.log('✅ Scheduler initialized:');
-  console.log('   - Daily report: 9:00 PM');
-  console.log('   - Weekly summary: Sundays 8:00 PM');
-  console.log('   - Medication checks: Every 30 min (9 AM - 9 PM)');
-  console.log('   - Health checks: Every 2 hours (9 AM - 9 PM)');
-  console.log('   - Morning greeting: 8:00 AM');
-  console.log('   - Proactive conversations: Hourly (9 AM - 9 PM)');
+  log.info('✅ Scheduler initialized:');
+  log.info('   - Daily report: 9:00 PM');
+  log.info('   - Weekly summary: Sundays 8:00 PM');
+  log.info('   - Medication checks: Every 30 min (9 AM - 9 PM)');
+  log.info('   - Health checks: Every 2 hours (9 AM - 9 PM)');
+  log.info('   - Morning greeting: 8:00 AM');
+  log.info('   - Proactive conversations: Hourly (9 AM - 9 PM)');
 }
 
 /**
  * Test scheduler (trigger reports immediately for testing)
  */
 export async function testScheduler() {
-  console.log('🧪 Testing scheduler functions...');
+  log.info('🧪 Testing scheduler functions...');
   
-  console.log('1. Testing daily report...');
+  log.info('1. Testing daily report...');
   await sendDailyReportToCaregiver();
   
-  console.log('2. Testing weekly summary...');
+  log.info('2. Testing weekly summary...');
   await sendWeeklySummaryToCaregiver();
   
-  console.log('3. Testing medication check...');
+  log.info('3. Testing medication check...');
   await checkMedicationAdherence();
   
-  console.log('4. Testing health check...');
+  log.info('4. Testing health check...');
   await proactiveHealthCheck();
   
-  console.log('✅ Scheduler tests complete');
+  log.info('✅ Scheduler tests complete');
 }

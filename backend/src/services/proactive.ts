@@ -1,6 +1,9 @@
 import { state, addActivity } from '../state';
 import { sendWhatsAppMessage } from './twilio';
 import { emitActivity, emitSpeak } from '../socket';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('proactive');
 
 const CAREGIVER_ALERT_COOLDOWN_MS = 6 * 60 * 60 * 1000;
 const NO_ACTIVITY_ALERT_COOLDOWN_MS = 6 * 60 * 60 * 1000;
@@ -59,7 +62,7 @@ export async function checkMedicationAdherence() {
         
         const context = getRecentPillCheckContext();
         if (!context) {
-          console.log('⚠️  Skipping caregiver alert: no recent pill check context.');
+          log.info('⚠️  Skipping caregiver alert: no recent pill check context.');
           continue;
         }
         

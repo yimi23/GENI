@@ -5,6 +5,9 @@ import { emitActivity, emitSpeak } from '../socket';
 import { generateFollowUp } from '../services/conversation';
 import { conversationMemory } from '../services/conversation-memory';
 import { buildGENIContext } from '../services/geni-context';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('chat');
 
 const router = Router();
 
@@ -47,7 +50,7 @@ router.post('/chat', async (req: Request, res: Response) => {
       response = followUpResult.response;
       shouldAskFollowUp = followUpResult.shouldAskFollowUp;
     } catch (error) {
-      console.error('❌ Follow-up generation failed, using standard response:', error);
+      log.error({ err: error }, '❌ Follow-up generation failed, using standard response:');
       response = intent.response || await generateResponse(message, history);
     }
     
@@ -64,9 +67,8 @@ router.post('/chat', async (req: Request, res: Response) => {
     // Trigger TTS on client
     emitSpeak(response);
     
-    console.log(`\n💬 Conversation Flow:`);
-    console.log(conversationMemory.getRecentContext(session.id, 5));
-    console.log('');
+    log.info(`\n💬 Conversation Flow:`);
+    log.info('');
     
     res.json({
       response,
@@ -78,7 +80,7 @@ router.post('/chat', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('❌ Chat error:', error);
+    log.error({ err: error }, '❌ Chat error:');
     res.status(500).json({ error: 'Failed to process message' });
   }
 });

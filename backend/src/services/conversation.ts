@@ -7,6 +7,9 @@ import { buildGENIContext } from './geni-context';
 import { config } from '../config';
 
 import { anthropic } from '../lib/anthropic';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('conversation');
 
 /**
  * Determine if GENI should initiate a conversation
@@ -92,11 +95,11 @@ GENI:`;
     });
     
     const response = message.content[0].type === 'text' ? message.content[0].text : '';
-    console.log('💬 Generated conversation starter:', response);
+    log.info({ detail: response }, '💬 Generated conversation starter:');
     return response;
     
   } catch (error) {
-    console.error('❌ Failed to generate conversation starter:', error);
+    log.error({ err: error }, '❌ Failed to generate conversation starter:');
     // Fallback
     return `Hey ${context.patientName}, how are you doing?`;
   }
@@ -177,7 +180,7 @@ GENI:`;
     const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
     const result = JSON.parse(responseText);
     
-    console.log('💬 Follow-up:', result.shouldAskFollowUp ? 'Yes' : 'No', '-', result.reasoning);
+    log.info({ shouldAskFollowUp: result.shouldAskFollowUp, reasoning: result.reasoning }, 'follow-up decision');
     
     return {
       response: result.response,
@@ -185,7 +188,7 @@ GENI:`;
     };
     
   } catch (error) {
-    console.error('❌ Failed to generate follow-up:', error);
+    log.error({ err: error }, '❌ Failed to generate follow-up:');
     return {
       response: patientMessage,
       shouldAskFollowUp: false,

@@ -1,6 +1,9 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { saveTrainingData, CATEGORIES } from '../scripts/train-vision';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('training');
 
 const router = Router();
 const upload = multer({ dest: 'uploads/' });
@@ -41,7 +44,7 @@ router.post('/training/submit', upload.single('image'), async (req: Request, res
     });
     
   } catch (error) {
-    console.error('❌ Training submission error:', error);
+    log.error({ err: error }, '❌ Training submission error:');
     res.status(500).json({ error: 'Failed to save training data' });
   }
 });
@@ -71,7 +74,7 @@ router.get('/training/stats', (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('❌ Training stats error:', error);
+    log.error({ err: error }, '❌ Training stats error:');
     res.status(500).json({ error: 'Failed to get training stats' });
   }
 });

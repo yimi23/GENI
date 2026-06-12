@@ -5,6 +5,9 @@
  */
 
 import { config } from '../config';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('medication-adherence');
 
 export type CompartmentState = 'empty' | 'full' | 'unclear';
 
@@ -87,15 +90,15 @@ export function analyzeMedicationAdherence(
   const now = currentTime || new Date();
   const today = (currentDay || getCurrentDay()).toLowerCase();
   
-  console.log('🔍 Analyzing medication adherence...');
-  console.log('📅 Current day:', today);
-  console.log('💊 Compartments:', compartments);
+  log.info('🔍 Analyzing medication adherence...');
+  log.info({ detail: today }, '📅 Current day:');
+  log.info({ detail: compartments }, '💊 Compartments:');
   
   // Determine which days SHOULD be empty by now
   // Logic: On Wednesday, Monday and Tuesday should be empty (assuming daily meds)
   const expectedEmptyDays = getWeekdaysUpTo(today);
   
-  console.log('📊 Expected empty days:', expectedEmptyDays);
+  log.info({ detail: expectedEmptyDays }, '📊 Expected empty days:');
   
   // Get actual states
   const actualEmptyDays: string[] = [];
@@ -112,16 +115,16 @@ export function analyzeMedicationAdherence(
     }
   });
   
-  console.log('✅ Actually empty:', actualEmptyDays);
-  console.log('❌ Still full:', actualFullDays);
-  console.log('❓ Unclear:', unclearDays);
+  log.info({ detail: actualEmptyDays }, '✅ Actually empty:');
+  log.info({ detail: actualFullDays }, '❌ Still full:');
+  log.info({ detail: unclearDays }, '❓ Unclear:');
   
   // Calculate missed days
   // Missed = days that SHOULD be empty but are FULL
   const missedDays = expectedEmptyDays.filter(day => actualFullDays.includes(day));
   const missedCount = missedDays.length;
   
-  console.log('🚨 Missed days:', missedDays, `(${missedCount} total)`);
+  log.info({ missedDays, missedCount }, 'missed days computed');
   
   // Determine concern level
   let concernLevel: ConcernLevel = 'none';

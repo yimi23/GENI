@@ -1,5 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { textToSpeech } from '../services/elevenlabs';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('tts');
 
 const router = Router();
 
@@ -14,7 +17,7 @@ router.post('/tts', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Text is required' });
     }
     
-    console.log(`🔊 Generating TTS for: "${text.substring(0, 50)}..."`);
+    log.info(`🔊 Generating TTS for: "${text.substring(0, 50)}..."`);
     
     const audioBuffer = await textToSpeech(text);
     
@@ -26,7 +29,7 @@ router.post('/tts', async (req: Request, res: Response) => {
     res.send(audioBuffer);
     
   } catch (error) {
-    console.error('❌ TTS generation failed:', error);
+    log.error({ err: error }, '❌ TTS generation failed:');
     res.status(500).json({ error: 'Failed to generate speech' });
   }
 });

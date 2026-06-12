@@ -1,5 +1,8 @@
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import path from 'path';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('fall-pose-stream');
 
 interface FallPoseResult {
   id: string;
@@ -47,7 +50,7 @@ class FallPoseStream {
             resolver(result);
           }
         } catch (error) {
-          console.error('❌ Fall pose stream parse error:', error);
+          log.error({ err: error }, '❌ Fall pose stream parse error:');
         }
       }
     });
@@ -58,7 +61,7 @@ class FallPoseStream {
       if (this.stderrBuffer.length > 5000) {
         this.stderrBuffer = this.stderrBuffer.slice(-2000);
       }
-      console.error('❌ Fall pose stream stderr:', data.trim());
+      log.error({ stderr: data.trim() }, 'fall pose stream stderr');
     });
     
     this.process.on('exit', () => {
@@ -99,7 +102,7 @@ class FallPoseStream {
     try {
       return await resultPromise;
     } catch (error) {
-      console.error('❌ Fall pose analysis failed:', error);
+      log.error({ err: error }, '❌ Fall pose analysis failed:');
       return null;
     }
   }

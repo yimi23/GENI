@@ -4,6 +4,9 @@ import { state, addActivity, updateMedicationStatus } from '../state';
 import { emitActivity, emitMedicationUpdate } from '../socket';
 import { getPillCheckHistory, getLastPillCheck } from '../database/pillCheckHistory';
 import { monitoring } from '../services/monitoring/core';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('medication');
 
 const router = Router();
 const upload = multer({ dest: 'uploads/' });
@@ -29,7 +32,7 @@ router.get('/medication/pill-check-history', (req: Request, res: Response) => {
       count: history.length,
     });
   } catch (error) {
-    console.error('❌ Get pill check history error:', error);
+    log.error({ err: error }, '❌ Get pill check history error:');
     res.status(500).json({ error: 'Failed to get pill check history' });
   }
 });
@@ -56,7 +59,7 @@ router.post('/medication/confirm', (req: Request, res: Response) => {
     }
     
   } catch (error) {
-    console.error('❌ Medication confirm error:', error);
+    log.error({ err: error }, '❌ Medication confirm error:');
     res.status(500).json({ error: 'Failed to confirm medication' });
   }
 });
@@ -90,7 +93,7 @@ router.post('/pill-check', upload.single('image'), async (req: Request, res: Res
     });
     
   } catch (error) {
-    console.error('❌ Pill check error:', error);
+    log.error({ err: error }, '❌ Pill check error:');
     res.status(500).json({ error: 'Failed to analyze pill image' });
   }
 });

@@ -7,6 +7,9 @@
 import { state } from '../state';
 import { notifyCaregiver } from './notifications';
 import { buildGENIContext } from './geni-context';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('health-report-sms');
 
 interface HealthMetrics {
   medicationsTakenToday: number;
@@ -134,10 +137,10 @@ export const healthReportService = {
    */
   async sendDailyReport(): Promise<void> {
     try {
-      console.log('📊 Generating daily health report...');
+      log.info('📊 Generating daily health report...');
 
       const message = this.generateReportMessage();
-      console.log('📱 Sending report to caregiver via SMS...');
+      log.info('📱 Sending report to caregiver via SMS...');
 
       await notifyCaregiver({
         type: 'daily_summary',
@@ -149,9 +152,9 @@ export const healthReportService = {
       this.lastReportSentAt = new Date();
       this.reportsSentCount++;
 
-      console.log(`✅ Daily report sent (Total: ${this.reportsSentCount})`);
+      log.info(`✅ Daily report sent (Total: ${this.reportsSentCount})`);
     } catch (error) {
-      console.error('❌ Failed to send daily report:', error);
+      log.error({ err: error }, '❌ Failed to send daily report:');
       throw error;
     }
   },

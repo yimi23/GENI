@@ -5,6 +5,9 @@
 
 import { Router, Request, Response } from 'express';
 import { fallDetectionService } from '../services/fall-detection';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('fall-detection');
 
 const router = Router();
 
@@ -27,7 +30,7 @@ router.post('/fall-detection/start', (req: Request, res: Response) => {
       status: fallDetectionService.getStatus()
     });
   } catch (error) {
-    console.error('❌ Start fall detection error:', error);
+    log.error({ err: error }, '❌ Start fall detection error:');
     res.status(500).json({ error: 'Failed to start fall detection' });
   }
 });
@@ -45,7 +48,7 @@ router.post('/fall-detection/stop', (req: Request, res: Response) => {
       status: fallDetectionService.getStatus()
     });
   } catch (error) {
-    console.error('❌ Stop fall detection error:', error);
+    log.error({ err: error }, '❌ Stop fall detection error:');
     res.status(500).json({ error: 'Failed to stop fall detection' });
   }
 });
@@ -62,7 +65,7 @@ router.get('/fall-detection/status', (req: Request, res: Response) => {
       status
     });
   } catch (error) {
-    console.error('❌ Get status error:', error);
+    log.error({ err: error }, '❌ Get status error:');
     res.status(500).json({ error: 'Failed to get status' });
   }
 });
@@ -86,7 +89,7 @@ router.post('/fall-detection/confirm-ok', (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.error('❌ Confirm OK error:', error);
+    log.error({ err: error }, '❌ Confirm OK error:');
     res.status(500).json({ error: 'Failed to process confirmation' });
   }
 });

@@ -2,6 +2,9 @@ import { Router, Request, Response } from 'express';
 import { sendWhatsAppMessage } from '../services/twilio';
 import { state, addActivity, getPrimaryContact } from '../state';
 import { emitActivity } from '../socket';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('messages');
 
 const router = Router();
 
@@ -44,7 +47,7 @@ router.post('/send-message', async (req: Request, res: Response) => {
     }
     
   } catch (error) {
-    console.error('❌ Send message error:', error);
+    log.error({ err: error }, '❌ Send message error:');
     res.status(500).json({ error: 'Failed to send message' });
   }
 });

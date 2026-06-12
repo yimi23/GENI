@@ -2,6 +2,9 @@ import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import { monitoring } from './services/monitoring/core';
 import { config } from './config';
+import { moduleLogger } from './lib/logger';
+
+const log = moduleLogger('socket');
 
 let io: SocketIOServer;
 
@@ -22,23 +25,23 @@ export function initializeSocket(httpServer: HTTPServer): SocketIOServer {
   });
 
   io.on('connection', (socket) => {
-    console.log('✅ Client connected:', socket.id);
+    log.info({ detail: socket.id }, '✅ Client connected:');
     
     // Camera pause/resume events
     socket.on('pause-camera', () => {
-      console.log('📷 Camera pause requested');
+      log.info('📷 Camera pause requested');
       monitoring.pause();
       socket.emit('camera-paused', { status: 'paused' });
     });
     
     socket.on('resume-camera', () => {
-      console.log('📷 Camera resume requested');
+      log.info('📷 Camera resume requested');
       monitoring.resume();
       socket.emit('camera-resumed', { status: 'resumed' });
     });
     
     socket.on('disconnect', () => {
-      console.log('❌ Client disconnected:', socket.id);
+      log.info({ detail: socket.id }, '❌ Client disconnected:');
     });
   });
   

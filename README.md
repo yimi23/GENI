@@ -1,228 +1,76 @@
-# 🐾 GENI - AI Elder Care Companion
+# 🐾 GENI — AI Elder Care Companion
 
-**SpartaHack 2024** | Production-ready AI system with Logo samples UI + Real backend
+GENI watches over elderly individuals living alone and keeps their families connected to their wellbeing — a warm conversational companion with passive medication monitoring, automatic fall detection, and caregiver alerts. **Companionship that protects.**
 
----
-
-## 🚀 Quick Start (30 seconds)
+## Quick start
 
 ```bash
-cd /Users/yimi/Desktop/GENI
+# 1. Configure (first time only)
+cp .env.example .env   # then fill in your keys
 
-# Terminal 1 - Backend
-cd backend && npm run dev
+# 2. Backend (terminal 1)
+cd backend && npm install && npm run dev
 
-# Terminal 2 - Frontend
-cd frontend && npm run dev
-
-# Open: http://localhost:3000
+# 3. Frontend (terminal 2)
+cd frontend && npm install && npm run dev
 ```
 
-**All API keys configured. Just run it.**
+Tip: set `PORT=5001` in `.env` — macOS AirPlay occupies the default 5000.
 
----
+## What it does
 
-## ✅ What You Get
+- **Conversational companion** — context-aware chat powered by Claude. GENI knows the medication schedule, recent activity, and conversation history before every exchange.
+- **Voice** — Whisper speech-to-text in, ElevenLabs voice out (browser TTS fallback).
+- **Medication adherence** — Claude Vision reads the pill organizer from camera frames; seven-day adherence history with concern-tiered caregiver alerts.
+- **Fall detection** — YOLO pose estimation with a 60-second cancellable countdown before caregivers are alerted via Twilio WhatsApp/SMS.
+- **Caregiver notifications** — every message flows through one decision gate (quiet hours by priority, dedup with escalation override). A confirmed fall always gets through; repeated triggers don't spam.
+- **Real-time dashboard** — patient profile, medication schedule, contacts, reminders, live activity feed over Socket.IO.
 
-### UI (From Logo Design Samples)
-- ✅ **Dashboard** - 6 cards (Profile, Medications, Hardware, Contacts, Reminders, Activity)
-- ✅ **Chat Interface** - Voice + text with AI
-- ✅ **Medication History** - 7-day calendar
-- ✅ **Fall Detection Modal** - Emergency alerts
-- ✅ **60+ Polished Components** - Professional UI
-
-### Backend (Real AI Integration)
-- ✅ **Claude Vision** - Pill detection via camera
-- ✅ **Claude Chat** - Natural conversations
-- ✅ **Whisper** - Voice transcription
-- ✅ **Socket.IO** - Real-time updates everywhere
-- ✅ **7 API Endpoints** - Complete REST API
-
-### Configuration
-- ✅ **ONE .env** - All config in root (learned from Remi)
-- ✅ **Working API Keys** - Anthropic + OpenAI from Remi project
-- ✅ **No Setup Needed** - Dependencies installed, keys configured
-
----
-
-## 📁 Structure
+## Architecture
 
 ```
-GENI/
-├── .env                    ← ONE config with working keys
-├── frontend/               ← Logo samples UI (60+ components)
-│   ├── components/         ← Dashboard, Chat, History, Modals
-│   ├── services/           ← API, Socket, Camera, Voice, TTS
-│   └── hooks/              ← React hooks
-└── backend/                ← Node.js + TypeScript
-    ├── routes/             ← 7 API endpoints
-    ├── services/           ← 5 AI integrations
-    └── models/             ← Data structures
+backend/  Node + TypeScript + Express
+  src/
+    lib/           db (SQLite/WAL), logger (pino), shared Anthropic client
+    middleware/    auth (API key), request context, global error handler
+    services/
+      monitoring/  ONE monitoring core: frame path + time-based cycle
+      notifications.ts   ONE caregiver-messaging path with the decision gate
+      vision.ts    all Claude Vision calls (structured outputs — guaranteed JSON)
+      geni-brain.ts / geni-context.ts   the context engine
+      fall-detection.ts  Python YOLO sidecar supervision + circuit breaker
+    routes/        thin Express routes
+    database/      pill check history (SQLite)
+frontend/ React 18 + Vite + Tailwind + Radix
 ```
 
-**94 TypeScript files. 5,000+ lines. Production quality.**
+- **Storage:** SQLite via better-sqlite3 (WAL). Legacy JSON data imports automatically on first boot.
+- **AI:** `claude-haiku-4-5` for chat and vision (set `ANTHROPIC_VISION_MODEL=claude-sonnet-4-6` for stronger pill detection).
+- **Security:** set `GENI_API_KEY` and every `/api` route plus the Socket.IO handshake requires it. CORS allowlist via `CORS_ORIGINS`. Production refuses to start without a key.
+- **Health:** `GET /health` reports real subsystem state (fall detection process, AI config) and returns 503 when degraded.
 
----
+## Commands
 
-## 🎯 Features
-
-### Working Now
-1. **Chat** - Real Claude AI conversations
-2. **Voice** - Whisper speech-to-text
-3. **Pill Detection** - Claude Vision camera analysis
-4. **Emergency Alerts** - Fall detection with 60s countdown
-5. **Real-time Updates** - Socket.IO throughout
-6. **Activity Logging** - Complete event tracking
-
-### Add Later (Optional)
-- WhatsApp messaging (Twilio free sandbox)
-- Premium TTS (ElevenLabs)
-- Hardware integration (FREE-WiLi)
-
----
-
-## 🔑 API Keys
-
-Set `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` in the root `.env` (see `.env.example`). The `.env` file is gitignored — never commit keys or key fragments to the repo.
-
----
-
-## 🧪 Test It
-
-### 1. Start Servers
 ```bash
-# Terminal 1
-cd backend && npm run dev
+cd backend
+npm run dev       # nodemon + ts-node
+npm test          # vitest (notification gate + adherence logic)
+npm run build     # tsc -> dist/
 
-# Terminal 2  
-cd frontend && npm run dev
+cd frontend
+npm run dev       # vite dev server
+npm run build     # production build
+
+# production
+pm2 start ecosystem.config.js   # from repo root, after backend build
 ```
 
-### 2. Test Features
-- **Dashboard** - See live patient data
-- **Chat** - Ask "What medications do I take?"
-- **Voice** - Click mic, speak, see transcription
-- **Camera** - Click "Check Pills", allow camera
-- **Emergency** - Click "🆘 Help", see modal
+## Environment
 
-### 3. Check Real-time
-- Activity Feed updates instantly
-- Medication status changes live
-- Socket.IO events in console
+See `.env.example` for the full list. Required: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`. Required in production: `GENI_API_KEY` (generate with `openssl rand -hex 32`; mirror it as `VITE_GENI_API_KEY` in `frontend/.env.local`).
 
----
+## Status
 
-## 📚 Documentation
+Working end to end: chat, voice, pill detection, fall countdown, caregiver notifications, dashboard. Twilio runs in sandbox mode pending a production account. Next up: remote family dashboard, fall-detection tuning.
 
-| File | Purpose |
-|------|---------|
-| **READY.md** | ⭐ Complete overview |
-| **START.md** | Quick 2-step guide |
-| **STRUCTURE_FINAL.md** | Complete file structure |
-| **docs/DEMO.md** | Hackathon demo script |
-| **docs/SETUP.md** | Detailed setup |
-| **docs/ARCHITECTURE.md** | System design |
-
----
-
-## 🛠️ Tech Stack
-
-**Frontend:**
-- React 18 + TypeScript + Vite
-- Tailwind CSS 4 (styling)
-- Radix UI (60+ components from Logo samples)
-- Socket.IO Client (real-time)
-
-**Backend:**
-- Node.js + TypeScript + Express
-- Anthropic Claude (Vision + Chat)
-- OpenAI Whisper (speech-to-text)
-- Socket.IO Server (real-time events)
-
----
-
-## 📊 Stats
-
-- **94 TypeScript files**
-- **5,000+ lines of code**
-- **60+ UI components** (from Logo samples)
-- **7 API endpoints** (working)
-- **5 AI integrations** (Claude, Whisper, etc.)
-- **0 mocks or fakes** (all real)
-
----
-
-## 🎬 Demo Flow (5 minutes)
-
-1. **Dashboard** - Show live patient monitoring
-2. **Chat** - "What medications do I take?" → Claude responds
-3. **Voice** - Click mic → speak → Whisper transcribes
-4. **Pill Check** - Camera → Claude Vision analyzes
-5. **Emergency** - Click 🆘 → 60s countdown → alerts
-
-See `docs/DEMO.md` for full script.
-
----
-
-## 🔧 Configuration
-
-### Single .env (Root)
-```env
-# Server
-PORT=5000
-NODE_ENV=development
-
-# Patient
-PATIENT_NAME=Margaret Johnson
-CAREGIVER_PHONE=+1234567890
-
-# AI (Working from Remi)
-ANTHROPIC_API_KEY=sk-ant-api03-...
-OPENAI_API_KEY=sk-svcacct-...
-
-# Optional
-TWILIO_ACCOUNT_SID=
-ELEVENLABS_API_KEY=
-```
-
-**Backend reads:** `dotenv.config({ path: '../.env' })`  
-**Frontend reads:** `.env.local` (auto-generated)
-
----
-
-## 🚨 Troubleshooting
-
-**Port already in use:**
-```bash
-lsof -ti:5000 | xargs kill -9
-```
-
-**Need to reinstall:**
-```bash
-cd backend && npm install
-cd ../frontend && npm install
-```
-
-**Check if keys loaded:**
-```bash
-cd backend && node -e "require('dotenv').config({path:'../.env'}); console.log('Anthropic:', process.env.ANTHROPIC_API_KEY ? '✅' : '❌');"
-```
-
----
-
-## 🤝 Team
-
-- **Praise Oyimi** - Full Stack + AI Integration
-- **Partner** - Hardware (FREE-WiLi)
-
----
-
-## 📄 License
-
-MIT License - SpartaHack 2024
-
----
-
-**Logo samples UI ✅ Real backend ✅ Working APIs ✅**
-
-**One .env. Just run it. Win the hackathon. 🐾🏆**
+Built by Praise Oyimi.

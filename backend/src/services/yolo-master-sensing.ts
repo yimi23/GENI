@@ -15,6 +15,9 @@ import { notifyCaregiver } from './notifications';
 import { textToSpeech } from './elevenlabs';
 import { state, addActivity } from '../state';
 import { emitActivity } from '../socket';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('yolo-master-sensing');
 
 interface YOLOEmergencyAlert {
   type: 'fall' | 'desk_faint' | 'unresponsive';
@@ -34,11 +37,11 @@ export const yoloMasterSensing = {
    * Called when detection confirms 3 seconds of unresponsiveness
    */
   async handleEmergencyDetected(alert: YOLOEmergencyAlert) {
-    console.log('🚨 YOLO EMERGENCY DETECTED:', alert.type);
+    log.info({ detail: alert.type }, '🚨 YOLO EMERGENCY DETECTED:');
 
     // Prevent duplicate alerts within 30 seconds
     if (this.emergencyInProgress) {
-      console.log('⚠️ Emergency already in progress, ignoring duplicate');
+      log.info('⚠️ Emergency already in progress, ignoring duplicate');
       return;
     }
 
@@ -54,12 +57,12 @@ export const yoloMasterSensing = {
       emitActivity(activity);
 
       // 1. IMMEDIATE AUDIO ALERT
-      console.log('📢 Triggering audio alert...');
+      log.info('📢 Triggering audio alert...');
       const audioMessage = 'Are you okay? I am notifying the authorities and your caretaker now.';
       await textToSpeech(audioMessage);
 
       // 2. SEND SMS TO CAREGIVER
-      console.log('📱 Sending SMS alert to caregiver...');
+      log.info('📱 Sending SMS alert to caregiver...');
       const context = buildGENIContext();
       const updateMessage = alert.type === 'fall' 
         ? `EMERGENCY: FALL DETECTED - ${context.patientName} may need immediate assistance`
@@ -85,10 +88,10 @@ export const yoloMasterSensing = {
       // 4. Auto-clear after 60 seconds if no manual confirmation
       setTimeout(() => {
         this.emergencyInProgress = false;
-        console.log('✅ Emergency timeout reset');
+        log.info('✅ Emergency timeout reset');
       }, 60000);
     } catch (error) {
-      console.error('❌ Error handling emergency:', error);
+      log.error({ err: error }, '❌ Error handling emergency:');
       this.emergencyInProgress = false;
     }
   },
@@ -97,7 +100,7 @@ export const yoloMasterSensing = {
    * Clear/acknowledge emergency
    */
   clearEmergency() {
-    console.log('✅ Emergency cleared by user');
+    log.info('✅ Emergency cleared by user');
     this.emergencyInProgress = false;
     this.lastEmergency = null;
     if (state.lastEmergency) {

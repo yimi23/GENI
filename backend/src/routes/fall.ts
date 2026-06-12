@@ -2,6 +2,9 @@ import { Router, Request, Response } from 'express';
 import { state, addActivity } from '../state';
 import { emitActivity, emitFallDetected } from '../socket';
 import { sendEmergencyAlert } from '../services/twilio';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('fall');
 
 const router = Router();
 
@@ -26,7 +29,7 @@ const fallState: FallState = {
  */
 router.post('/fall/detected', async (req: Request, res: Response) => {
   try {
-    console.log('🚨 FALL DETECTED by camera');
+    log.info('🚨 FALL DETECTED by camera');
     
     // Update state
     fallState.detected = true;
@@ -50,7 +53,7 @@ router.post('/fall/detected', async (req: Request, res: Response) => {
     
     fallState.emergencyCountdown = setTimeout(async () => {
       if (!fallState.responseReceived) {
-        console.log('⏰ No response to fall detection - Calling for help');
+        log.info('⏰ No response to fall detection - Calling for help');
         
         // Send emergency alerts
         await sendEmergencyAlert(
@@ -74,7 +77,7 @@ router.post('/fall/detected', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('❌ Fall detection error:', error);
+    log.error({ err: error }, '❌ Fall detection error:');
     res.status(500).json({ error: 'Failed to process fall detection' });
   }
 });
@@ -84,7 +87,7 @@ router.post('/fall/detected', async (req: Request, res: Response) => {
  */
 router.post('/fall/okay', (req: Request, res: Response) => {
   try {
-    console.log('✅ User reported they are okay');
+    log.info('✅ User reported they are okay');
     
     // Cancel emergency countdown
     if (fallState.emergencyCountdown) {
@@ -105,7 +108,7 @@ router.post('/fall/okay', (req: Request, res: Response) => {
     res.json({ success: true, message: 'Glad you\'re okay!' });
     
   } catch (error) {
-    console.error('❌ Fall okay error:', error);
+    log.error({ err: error }, '❌ Fall okay error:');
     res.status(500).json({ error: 'Failed to process response' });
   }
 });
@@ -115,7 +118,7 @@ router.post('/fall/okay', (req: Request, res: Response) => {
  */
 router.post('/fall/help', async (req: Request, res: Response) => {
   try {
-    console.log('🆘 User needs help after fall');
+    log.info('🆘 User needs help after fall');
     
     // Cancel countdown (we're calling immediately)
     if (fallState.emergencyCountdown) {
@@ -144,7 +147,7 @@ router.post('/fall/help', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('❌ Fall help error:', error);
+    log.error({ err: error }, '❌ Fall help error:');
     res.status(500).json({ error: 'Failed to call for help' });
   }
 });
@@ -154,7 +157,7 @@ router.post('/fall/help', async (req: Request, res: Response) => {
  */
 router.post('/fall/cancel', (req: Request, res: Response) => {
   try {
-    console.log('⏸️  Fall alert cancelled by user');
+    log.info('⏸️  Fall alert cancelled by user');
     
     if (fallState.emergencyCountdown) {
       clearTimeout(fallState.emergencyCountdown);
@@ -173,7 +176,7 @@ router.post('/fall/cancel', (req: Request, res: Response) => {
     res.json({ success: true, message: 'Alert cancelled' });
     
   } catch (error) {
-    console.error('❌ Fall cancel error:', error);
+    log.error({ err: error }, '❌ Fall cancel error:');
     res.status(500).json({ error: 'Failed to cancel alert' });
   }
 });

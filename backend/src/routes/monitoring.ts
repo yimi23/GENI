@@ -5,6 +5,9 @@
 
 import { Router, Request, Response } from 'express';
 import { monitoring } from '../services/monitoring/core';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('monitoring');
 
 const router = Router();
 
@@ -13,7 +16,7 @@ const router = Router();
  */
 router.post('/monitor/cycle', async (req: Request, res: Response) => {
   try {
-    console.log('🔄 Manual monitoring cycle triggered');
+    log.info('🔄 Manual monitoring cycle triggered');
     
     const result = await monitoring.runCycle();
     
@@ -23,7 +26,7 @@ router.post('/monitor/cycle', async (req: Request, res: Response) => {
       timestamp: new Date(),
     });
   } catch (error) {
-    console.error('❌ Monitoring cycle error:', error);
+    log.error({ err: error }, '❌ Monitoring cycle error:');
     res.status(500).json({ error: 'Failed to run monitoring cycle' });
   }
 });
@@ -42,7 +45,7 @@ router.get('/monitor/status', (req: Request, res: Response) => {
       timestamp: new Date(),
     });
   } catch (error) {
-    console.error('❌ Status error:', error);
+    log.error({ err: error }, '❌ Status error:');
     res.status(500).json({ error: 'Failed to get status' });
   }
 });
@@ -61,7 +64,7 @@ router.get('/monitor/events', (req: Request, res: Response) => {
       timestamp: new Date(),
     });
   } catch (error) {
-    console.error('❌ Events error:', error);
+    log.error({ err: error }, '❌ Events error:');
     res.status(500).json({ error: 'Failed to get events' });
   }
 });

@@ -9,6 +9,9 @@ import type { Medication } from '../models/Medication';
 import { config } from '../config';
 
 import { anthropic } from '../lib/anthropic';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('geni-brain');
 
 /**
  * GENI's core personality and instructions
@@ -141,8 +144,8 @@ export async function generateResponse(
 ): Promise<string> {
   const context = buildGENIContext();
   
-  console.log('🧠 GENI Brain - Building contextual response');
-  console.log(formatContextSummary(context));
+  log.info('🧠 GENI Brain - Building contextual response');
+  log.debug(formatContextSummary(context));
   
   // Build conversation history
   let historyText = '';
@@ -163,7 +166,7 @@ ${context.patientName}: ${userMessage}
 
 GENI:`;
 
-  console.log('🔮 Sending to Claude via GENI brain...');
+  log.info('🔮 Sending to Claude via GENI brain...');
   
   try {
     const message = await anthropic.messages.create({
@@ -178,10 +181,10 @@ GENI:`;
     });
     
     const response = message.content[0].type === 'text' ? message.content[0].text : '';
-    console.log('✅ GENI response:', response);
+    log.info({ detail: response }, '✅ GENI response:');
     return response;
   } catch (error) {
-    console.error('❌ Claude error:', error);
+    log.error({ err: error }, '❌ Claude error:');
     // Fallback (but still contextual)
     return `I'm having a bit of trouble thinking right now, ${context.patientName}. Can you try again?`;
   }
@@ -198,9 +201,9 @@ export async function generatePillCheckResponse(
 ): Promise<string> {
   const context = buildGENIContext();
   
-  console.log('🧠 GENI Brain - Generating pill check response');
-  console.log('Vision result:', visionResult);
-  console.log(formatContextSummary(context));
+  log.info('🧠 GENI Brain - Generating pill check response');
+  log.info({ detail: visionResult }, 'Vision result:');
+  log.debug(formatContextSummary(context));
   
   const pillCheckPrompt = `${GENI_SYSTEM_PROMPT}
 
@@ -275,10 +278,10 @@ GENI:`;
     });
     
     const response = message.content[0].type === 'text' ? message.content[0].text : '';
-    console.log('✅ Pill check response:', response);
+    log.info({ detail: response }, '✅ Pill check response:');
     return response;
   } catch (error) {
-    console.error('❌ Claude error:', error);
+    log.error({ err: error }, '❌ Claude error:');
     // Contextual fallback - SHORT responses
     if (visionResult.status === 'present') {
       return `Your medication is ready. Time to take it.`;
@@ -298,9 +301,9 @@ export async function generateProactiveCheckIn(
 ): Promise<string> {
   const context = buildGENIContext();
   
-  console.log('🧠 GENI Brain - Generating proactive check-in');
-  console.log('Reason:', reason);
-  console.log(formatContextSummary(context));
+  log.info('🧠 GENI Brain - Generating proactive check-in');
+  log.info({ detail: reason }, 'Reason:');
+  log.debug(formatContextSummary(context));
   
   let situationText = '';
   
@@ -343,10 +346,10 @@ GENI:`;
     });
     
     const response = message.content[0].type === 'text' ? message.content[0].text : '';
-    console.log('✅ Proactive check-in:', response);
+    log.info({ detail: response }, '✅ Proactive check-in:');
     return response;
   } catch (error) {
-    console.error('❌ Claude error:', error);
+    log.error({ err: error }, '❌ Claude error:');
     // Basic fallback
     return `Hey ${context.patientName}, just checking in. How are you doing?`;
   }

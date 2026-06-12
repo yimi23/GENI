@@ -1,5 +1,8 @@
 import axios from 'axios';
 import { config } from '../config';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('elevenlabs');
 
 export async function textToSpeech(text: string): Promise<Buffer> {
   // Validate config before making request
@@ -34,18 +37,18 @@ export async function textToSpeech(text: string): Promise<Buffer> {
       timeout: 15000, // 15 second timeout
     });
     
-    console.log('✅ ElevenLabs TTS generated:', text.substring(0, 50) + '...');
+    log.info({ preview: text.substring(0, 50) }, 'ElevenLabs TTS generated');
     return Buffer.from(response.data);
     
   } catch (error: any) {
     if (error.response) {
-      console.error('❌ ElevenLabs API error:', error.response.status, error.response.data);
+      log.error({ status: error.response.status, data: error.response.data }, 'ElevenLabs API error');
       throw new Error(`ElevenLabs API error: ${error.response.status}`);
     } else if (error.request) {
-      console.error('❌ ElevenLabs network error:', error.message);
+      log.error({ err: error.message }, '❌ ElevenLabs network error:');
       throw new Error('ElevenLabs network error');
     } else {
-      console.error('❌ ElevenLabs error:', error.message);
+      log.error({ err: error.message }, '❌ ElevenLabs error:');
       throw error;
     }
   }

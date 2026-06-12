@@ -25,6 +25,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 import { anthropic } from '../lib/anthropic';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('voice');
 
 /**
  * Analyze sentiment from transcribed voice note
@@ -52,7 +55,7 @@ Output ONLY the category (one word).`;
     const sentiment = (message.content[0].type === 'text' ? message.content[0].text.trim().toLowerCase() : 'neutral') as any;
     return ['positive', 'neutral', 'concerned', 'distressed'].includes(sentiment) ? sentiment : 'neutral';
   } catch (error) {
-    console.error('❌ Sentiment analysis failed:', error);
+    log.error({ err: error }, '❌ Sentiment analysis failed:');
     return 'neutral';
   }
 }
@@ -63,7 +66,7 @@ router.post('/voice', upload.single('audio'), async (req: Request, res: Response
       return res.status(400).json({ error: 'Audio file is required' });
     }
     
-    console.log('🎤 Received audio file:', req.file.filename, 'size:', req.file.size);
+    log.info({ file: req.file.filename, size: req.file.size }, 'received audio file');
     
     const { sessionId } = req.body;
     
@@ -75,11 +78,11 @@ router.post('/voice', upload.single('audio'), async (req: Request, res: Response
     
     // Transcribe audio
     const transcription = await transcribeAudio(req.file.path);
-    console.log(`📝 Transcription: "${transcription}"`);
+    log.info(`📝 Transcription: "${transcription}"`);
     
     // Analyze sentiment
     const sentiment = await analyzeSentiment(transcription);
-    console.log(`🎭 Sentiment: ${sentiment}`);
+    log.info(`🎭 Sentiment: ${sentiment}`);
     
     // Log transcription
     const transcriptionActivity = addActivity(`Voice: ${transcription}`, 'voice');
@@ -110,7 +113,7 @@ router.post('/voice', upload.single('audio'), async (req: Request, res: Response
       response = followUpResult.response;
       shouldAskFollowUp = followUpResult.shouldAskFollowUp;
     } catch (error) {
-      console.error('❌ Follow-up generation failed, using standard response:', error);
+      log.error({ err: error }, '❌ Follow-up generation failed, using standard response:');
       response = intent.response || await generateResponse(transcription, history);
     }
     
@@ -128,14 +131,13 @@ router.post('/voice', upload.single('audio'), async (req: Request, res: Response
     // Trigger TTS on client
     emitSpeak(response);
     
-    console.log(`\n🎤 Voice Conversation Flow:`);
-    console.log(conversationMemory.getRecentContext(session.id, 5));
-    console.log('');
+    log.info(`\n🎤 Voice Conversation Flow:`);
+    log.info('');
     
     // Clean up uploaded file
     const fs = require('fs');
     fs.unlinkSync(req.file.path);
-    console.log('🗑️  Cleaned up audio file');
+    log.info('🗑️  Cleaned up audio file');
     
     res.json({
       transcription,
@@ -149,7 +151,7 @@ router.post('/voice', upload.single('audio'), async (req: Request, res: Response
     });
     
   } catch (error) {
-    console.error('❌ Voice error:', error);
+    log.error({ err: error }, '❌ Voice error:');
     // Clean up file on error too
     if (req.file) {
       try {

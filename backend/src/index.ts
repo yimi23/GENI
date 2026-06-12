@@ -32,6 +32,9 @@ import monitoringRouter from './routes/monitoring';
 import fallDetectionRouter from './routes/fall-detection';
 import visionStreamRouter from './routes/vision-stream';
 import yoloEmergencyRouter from './routes/yolo-emergency';
+import { moduleLogger } from './lib/logger';
+
+const log = moduleLogger('index');
 
 const app = express();
 const server = http.createServer(app);
@@ -49,9 +52,9 @@ if (config.fallDetection.enabled && config.fallDetection.mode === 'camera') {
     camera: 0,
     headless: true, // No window in production
   });
-  console.log('🚨 Fall detection started (YOLO pose estimation)');
+  log.info('🚨 Fall detection started (YOLO pose estimation)');
 } else {
-  console.log('⚠️  Fall detection camera process disabled (using frame pipeline or disabled)');
+  log.info('⚠️  Fall detection camera process disabled (using frame pipeline or disabled)');
 }
 
 // Middleware
@@ -134,33 +137,16 @@ app.use(errorHandler);
 
 // Start server
 server.listen(config.port, () => {
-  console.log(`
-╔════════════════════════════════════════╗
-║                                        ║
-║   🐾 GENI Backend Server Running      ║
-║                                        ║
-║   Port: ${config.port}                      ║
-║   Environment: ${config.nodeEnv}       ║
-║   Patient: ${config.patient.name}              ║
-║                                        ║
-╚════════════════════════════════════════╝
-  `);
-  
-  console.log('📍 API Endpoints:');
-  console.log('   GET  /api/status');
-  console.log('   POST /api/chat');
-  console.log('   POST /api/voice');
-  console.log('   POST /api/pill-check');
-  console.log('   POST /api/send-message');
-  console.log('   POST /api/emergency');
-  console.log('   POST /api/medication/confirm');
-  console.log('   GET  /api/medication/history');
-  console.log('   POST /api/webhook/twilio');
-  console.log('   POST /api/proactive/check');
-  console.log('   POST /api/proactive/morning-briefing');
-  console.log('   POST /api/proactive/health-check');
-  console.log('   WS   /socket.io');
-  console.log('');
+  log.info(
+    {
+      port: config.port,
+      env: config.nodeEnv,
+      patient: config.patient.name,
+      authEnabled: !!config.security.apiKey,
+      fallDetection: config.fallDetection.enabled ? config.fallDetection.mode : 'disabled',
+    },
+    '🐾 GENI backend running'
+  );
 });
 
 export default app;

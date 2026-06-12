@@ -5,6 +5,9 @@
 
 import { Router, Request, Response } from 'express';
 import { monitoring } from '../services/monitoring/core';
+import { moduleLogger } from '../lib/logger';
+
+const log = moduleLogger('vision-stream');
 
 const router = Router();
 
@@ -50,7 +53,7 @@ router.post('/vision/analyze', async (req: Request, res: Response) => {
     });
     
   } catch (error: any) {
-    console.error('❌ Vision analysis error:', error);
+    log.error({ err: error }, '❌ Vision analysis error:');
     res.status(500).json({
       error: 'Vision analysis failed',
       details: error.message,
