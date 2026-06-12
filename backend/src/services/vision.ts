@@ -1,6 +1,6 @@
 import { config } from '../config';
 import { PILL_DETECTION_PROMPT } from '../prompts/pillDetection';
-import { HUMAN_DETECTION_PROMPT } from '../prompts/humanDetection';
+import { buildFrameAnalysisPrompt } from '../prompts/frameAnalysis';
 
 import { anthropic, VISION_MODEL } from '../lib/anthropic';
 import { moduleLogger } from '../lib/logger';
@@ -36,23 +36,6 @@ const PILL_SCHEMA = {
     observations: { type: 'string' },
   },
   required: ['status', 'confidence', 'observations'],
-  additionalProperties: false,
-};
-
-const HUMAN_SCHEMA = {
-  type: 'object',
-  properties: {
-    humanPresent: { type: 'boolean' },
-    count: { type: 'integer' },
-    positions: {
-      type: 'array',
-      items: { type: 'string', enum: ['standing', 'sitting', 'lying', 'fallen', 'walking', 'unclear'] },
-    },
-    fallDetected: { type: 'boolean' },
-    confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
-    observations: { type: 'string' },
-  },
-  required: ['humanPresent', 'count', 'positions', 'fallDetected', 'confidence', 'observations'],
   additionalProperties: false,
 };
 
@@ -93,15 +76,6 @@ interface PillDetectionResult {
     sunday?: number;
   };
   overallStatus?: 'all-taken' | 'partial-adherence' | 'no-adherence' | 'unclear' | 'no-organizer-detected';
-  observations: string;
-}
-
-interface HumanDetectionResult {
-  humanPresent: boolean;
-  count: number;
-  positions: ('standing' | 'sitting' | 'lying' | 'fallen' | 'walking' | 'unclear')[];
-  fallDetected: boolean;
-  confidence: 'high' | 'medium' | 'low';
   observations: string;
 }
 
@@ -148,60 +122,6 @@ export async function analyzePillImage(imageBase64: string): Promise<PillDetecti
       status: 'unclear',
       confidence: 'low',
       observations: `Error: ${error.message || 'Unknown error'}`,
-    };
-  }
-}
-
-export async function analyzeHumanPresence(imageBase64: string): Promise<HumanDetectionResult> {
-  try {
-    // Remove data URL prefix if present
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-    
-    const message = await anthropic.messages.create({
-      model: VISION_MODEL,
-      max_tokens: 1024,
-      system: "You are a computer vision API. You MUST respond with ONLY a valid JSON object, no other text whatsoever. No explanations, no apologies, no markdown. Start with { and end with }.",
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: 'image/jpeg',
-                data: base64Data,
-              },
-            },
-            {
-              type: 'text',
-              text: HUMAN_DETECTION_PROMPT,
-            },
-          ],
-        },
-      ],
-      output_config: { format: { type: 'json_schema', schema: HUMAN_SCHEMA } },
-    });
-    
-    const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-    const result: HumanDetectionResult = JSON.parse(responseText);
-    
-    // CRITICAL: If fall detected, log alert
-    if (result.fallDetected) {
-      log.error({ err: result.observations }, '🚨 FALL DETECTED:');
-    }
-    
-    return result;
-    
-  } catch (error) {
-    log.error({ err: error }, '❌ Human vision analysis failed:');
-    return {
-      humanPresent: false,
-      count: 0,
-      positions: [],
-      fallDetected: false,
-      confidence: 'low',
-      observations: 'Error analyzing image',
     };
   }
 }
@@ -282,6 +202,91 @@ Be concise and factual. Only list real concerns.`,
     const analysis = JSON.parse(content.text);
     return { timestamp: new Date(), ...analysis };
   } catch (error) {
+    return fallback;
+  }
+}
+
+export interface FrameAnalysis {
+  scene: SceneAnalysis;
+  pills: PillDetectionResult;
+}
+
+const FRAME_SCHEMA = {
+  type: 'object',
+  properties: {
+    scene: {
+      type: 'object',
+      properties: {
+        observations: SCENE_SCHEMA.properties.observations,
+        activity: SCENE_SCHEMA.properties.activity,
+        concerns: SCENE_SCHEMA.properties.concerns,
+      },
+      required: ['observations', 'activity', 'concerns'],
+      additionalProperties: false,
+    },
+    pills: PILL_SCHEMA,
+  },
+  required: ['scene', 'pills'],
+  additionalProperties: false,
+};
+
+/**
+ * ONE vision call for the whole monitoring frame path: scene understanding
+ * and pill-organizer reading together. Halves image tokens and round trips
+ * versus the previous analyzeScene + analyzePillImage pair.
+ */
+export async function analyzeFrame(
+  imageBase64: string,
+  patientName: string,
+  scheduleContext: string
+): Promise<FrameAnalysis> {
+  const fallback: FrameAnalysis = {
+    scene: {
+      timestamp: new Date(),
+      observations: 'Analysis unavailable',
+      activity: 'unclear',
+      pillStatus: 'unclear',
+      concerns: [],
+    },
+    pills: { status: 'unclear', confidence: 'low', observations: 'Analysis unavailable' },
+  };
+
+  try {
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+
+    const message = await anthropic.messages.create({
+      model: VISION_MODEL,
+      max_tokens: 1024,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: 'image/jpeg', data: base64Data },
+            },
+            { type: 'text', text: buildFrameAnalysisPrompt(patientName, scheduleContext) },
+          ],
+        },
+      ],
+      output_config: { format: { type: 'json_schema', schema: FRAME_SCHEMA } },
+    });
+
+    const content = message.content[0];
+    if (content.type !== 'text') return fallback;
+
+    const parsed = JSON.parse(content.text);
+    return {
+      scene: {
+        timestamp: new Date(),
+        ...parsed.scene,
+        // pillStatus on the scene mirrors the dedicated pills reading
+        pillStatus: parsed.pills.status,
+      },
+      pills: parsed.pills,
+    };
+  } catch (error) {
+    log.error({ err: error }, 'combined frame analysis failed');
     return fallback;
   }
 }

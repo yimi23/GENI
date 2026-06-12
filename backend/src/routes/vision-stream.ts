@@ -35,6 +35,15 @@ router.post('/vision/analyze', async (req: Request, res: Response) => {
         message: 'Vision monitoring is paused (voice interaction active)',
       });
     }
+
+    // A previous frame is still being analyzed — skip instead of stacking
+    // AI calls (manual checks still wait their turn)
+    if (source === 'continuous' && monitoring.isBusy()) {
+      return res.json({
+        status: 'busy',
+        message: 'Previous frame still processing',
+      });
+    }
     
     // Analyze frame with unified pipeline
     const pipeline = await monitoring.processFrame(base64Data, { source });

@@ -1,5 +1,5 @@
 import { state, addActivity } from '../state';
-import { sendWhatsAppMessage } from './twilio';
+import { notifyCaregiver } from './notifications';
 import { emitActivity, emitSpeak } from '../socket';
 import { moduleLogger } from '../lib/logger';
 
@@ -66,14 +66,14 @@ export async function checkMedicationAdherence() {
           continue;
         }
         
-        const primaryContact = state.contacts.find(c => c.isPrimary);
-        if (primaryContact) {
-          const alert = `${state.patient.name} hasn't confirmed ${med.time} medication (${med.name}). Please check in. ${context}`;
-          const sent = await sendWhatsAppMessage(primaryContact.phone, `Hey, this is GENI. ${alert}`);
-          if (sent) {
-            addActivity(`Alert sent to ${primaryContact.name}: Missed medication`, 'system');
-            lastMedicationAlertAt.set(alertKey, Date.now());
-          }
+        const sent = await notifyCaregiver({
+          type: 'medication_missed',
+          priority: 'high',
+          message: `Hey, this is GENI. ${state.patient.name} hasn't confirmed ${med.time} medication (${med.name}). Please check in. ${context}`,
+          dedupKey: `medication_missed:${med.name}`,
+        });
+        if (sent) {
+          lastMedicationAlertAt.set(alertKey, Date.now());
         }
       }
     }
@@ -145,16 +145,13 @@ export async function proactiveHealthCheck() {
         if (lastNoActivityAlertAt && Date.now() - lastNoActivityAlertAt < NO_ACTIVITY_ALERT_COOLDOWN_MS) {
           return;
         }
-        const primaryContact = state.contacts.find(c => c.isPrimary);
-        if (primaryContact) {
-          const sent = await sendWhatsAppMessage(
-            primaryContact.phone,
-            `Hey, this is GENI. No activity from ${state.patient.name} in 2+ hours. Please check in when possible.`
-          );
-          if (sent) {
-            addActivity(`Alert sent to ${primaryContact.name}: No recent activity`, 'system');
-            lastNoActivityAlertAt = Date.now();
-          }
+        const sent = await notifyCaregiver({
+          type: 'inactivity',
+          priority: 'medium',
+          message: `Hey, this is GENI. No activity from ${state.patient.name} in 2+ hours. Please check in when possible.`,
+        });
+        if (sent) {
+          lastNoActivityAlertAt = Date.now();
         }
       }
     }, 5 * 60 * 1000);
@@ -196,10 +193,11 @@ Overall: ${state.patient.name} is doing well! Keep up the great work.
 
 - GENI 🐾`;
 
-  const sent = await sendWhatsAppMessage(primaryContact.phone, summary);
-  if (sent) {
-    addActivity(`Weekly summary sent to ${primaryContact.name}`, 'system');
-  }
+  await notifyCaregiver({
+    type: 'weekly_summary',
+    priority: 'low',
+    message: summary,
+  });
 }
 
 export function shouldTriggerProactiveAction(): { action: string; message: string } | null {

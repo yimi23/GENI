@@ -1,13 +1,13 @@
 import cron from 'node-cron';
 import { sendDailyReportToCaregiver } from './reporting';
 import { sendWeeklySummaryToCaregiver } from './proactive';
-import { proactiveHealthCheck, checkMedicationAdherence } from './proactive';
 import { addActivity } from '../state';
-import { shouldInitiateConversation, generateConversationStarter } from './conversation';
+import { generateConversationStarter } from './conversation';
 import { emitSpeak } from '../socket';
 import { healthReportService } from './health-report-sms';
 import { adherenceReportService } from './adherence-report-sms';
 import { moduleLogger } from '../lib/logger';
+import { monitoring } from './monitoring/core';
 
 const log = moduleLogger('scheduler');
 
@@ -57,18 +57,16 @@ export function initializeScheduler() {
     timezone: 'America/Detroit'
   });
   
-  // Medication adherence check: Every 30 minutes (9 AM - 9 PM)
-  cron.schedule('*/30 9-21 * * *', async () => {
-    log.info('💊 Checking medication adherence...');
-    await checkMedicationAdherence();
-  }, {
-    timezone: 'America/Detroit'
-  });
-  
-  // Proactive health check: Every 2 hours (9 AM - 9 PM)
-  cron.schedule('0 9-21/2 * * *', async () => {
-    log.info('🏥 Running proactive health check...');
-    await proactiveHealthCheck();
+  // Unified monitoring cycle: every 15 min (8 AM - 10 PM). The core throttles
+  // internally (conversation 30 min, meds 30 min, wellness 2 h), so this one
+  // cron replaces the three separate med/health/conversation crons that each
+  // duplicated part of the cycle.
+  cron.schedule('*/15 8-22 * * *', async () => {
+    try {
+      await monitoring.runCycle();
+    } catch (error) {
+      log.error({ err: error }, 'monitoring cycle failed');
+    }
   }, {
     timezone: 'America/Detroit'
   });
@@ -83,26 +81,7 @@ export function initializeScheduler() {
     timezone: 'America/Detroit'
   });
   
-  // Proactive conversation check: Every hour (9 AM - 9 PM)
-  cron.schedule('0 9-21 * * *', async () => {
-    const { shouldStart, reason } = shouldInitiateConversation();
-    if (shouldStart) {
-      log.info({ detail: reason }, '💬 Initiating proactive conversation:');
-      const starter = await generateConversationStarter(reason);
-      addActivity(`GENI: ${starter}`, 'system');
-      emitSpeak(starter);
-    }
-  }, {
-    timezone: 'America/Detroit'
-  });
-  
-  log.info('✅ Scheduler initialized:');
-  log.info('   - Daily report: 9:00 PM');
-  log.info('   - Weekly summary: Sundays 8:00 PM');
-  log.info('   - Medication checks: Every 30 min (9 AM - 9 PM)');
-  log.info('   - Health checks: Every 2 hours (9 AM - 9 PM)');
-  log.info('   - Morning greeting: 8:00 AM');
-  log.info('   - Proactive conversations: Hourly (9 AM - 9 PM)');
+  log.info('scheduler initialized: monitoring cycle */15 8-22, reports daily 9pm + weekly Sun, morning greeting 8am');
 }
 
 /**
@@ -117,11 +96,8 @@ export async function testScheduler() {
   log.info('2. Testing weekly summary...');
   await sendWeeklySummaryToCaregiver();
   
-  log.info('3. Testing medication check...');
-  await checkMedicationAdherence();
-  
-  log.info('4. Testing health check...');
-  await proactiveHealthCheck();
+  log.info('3. Testing monitoring cycle...');
+  await monitoring.runCycle();
   
   log.info('✅ Scheduler tests complete');
 }

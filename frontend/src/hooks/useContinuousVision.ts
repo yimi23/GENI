@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { captureFrameAsDataUrl } from '../lib/frame-capture';
+import { captureFrameAsDataUrl, frameSignature, signatureDiff } from '../lib/frame-capture';
 
 const API_URL = (import.meta.env as Record<string, any>).VITE_API_URL || 'http://localhost:5001';
 const API_KEY = (import.meta.env as Record<string, any>).VITE_GENI_API_KEY || '';
@@ -58,6 +58,14 @@ export function useContinuousVision(
   
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
+  const lastSignatureRef = useRef<number[] | null>(null);
+  const lastAnalyzedAtRef = useRef<number>(0);
+
+  // Skip AI analysis when the frame is essentially unchanged — a quiet room
+  // at night should cost nothing. Heartbeat forces a real analysis at least
+  // every 5 minutes so monitoring never goes fully blind.
+  const STATIC_FRAME_THRESHOLD = 6; // mean abs pixel diff, 0-255
+  const HEARTBEAT_MS = 5 * 60 * 1000;
   
   /**
    * Send frame to backend for analysis
@@ -69,8 +77,21 @@ export function useContinuousVision(
     
     try {
       setIsProcessing(true);
-      
-      console.log('📸 Continuous vision: Capturing frame...');
+
+      // Static-frame gate: compare a cheap 8x8 signature before spending an
+      // AI call. Heartbeat overrides the skip.
+      const signature = frameSignature(videoRef.current);
+      const heartbeatDue = Date.now() - lastAnalyzedAtRef.current > HEARTBEAT_MS;
+      if (
+        lastSignatureRef.current &&
+        !heartbeatDue &&
+        signatureDiff(signature, lastSignatureRef.current) < STATIC_FRAME_THRESHOLD
+      ) {
+        return; // nothing changed — skip network + AI entirely
+      }
+      lastSignatureRef.current = signature;
+      lastAnalyzedAtRef.current = Date.now();
+
       const imageBase64 = captureFrameAsDataUrl(videoRef.current, 0.8);
       
       console.log('🔍 Continuous vision: Sending to backend...');
@@ -99,7 +120,7 @@ export function useContinuousVision(
       
       const result = await response.json();
       
-      if (result.status === 'paused') {
+      if (result.status === 'paused' || result.status === 'busy') {
         console.log('⏸️  Vision paused on backend');
         return;
       }

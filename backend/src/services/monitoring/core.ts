@@ -19,7 +19,7 @@ import { config } from '../../config';
 import { moduleLogger } from '../../lib/logger';
 import { state, addActivity, addPillCheckResult } from '../../state';
 import { emitActivity, emitSpeak, emitVisionUpdate } from '../../socket';
-import { analyzePillImage, analyzeScene, type SceneAnalysis } from '../vision';
+import { analyzeFrame, type SceneAnalysis } from '../vision';
 import { analyzeMedicationAdherence, type CompartmentStates } from '../medication-adherence';
 import { generatePillCheckResponse } from '../geni-brain';
 import { notifyPillCheck, notifyCaregiver, notifyMedicationMissed, type NotificationPriority } from '../notifications';
@@ -75,6 +75,7 @@ function getTimeOfDay(): string {
 
 class MonitoringCore extends EventEmitter {
   private paused = false;
+  private frameInFlight = false;
 
   private vision: VisionState = {
     lastAnalysis: null,
@@ -92,7 +93,22 @@ class MonitoringCore extends EventEmitter {
   // Frame path
   // -------------------------------------------------------------------------
 
+  /** True while a frame is being analyzed — continuous frames arriving
+   * during analysis are skipped at the route to avoid double AI spend. */
+  isBusy(): boolean {
+    return this.frameInFlight;
+  }
+
   async processFrame(imageBase64: string, options: { source: FrameSource }): Promise<FrameResult> {
+    this.frameInFlight = true;
+    try {
+      return await this.processFrameInner(imageBase64, options);
+    } finally {
+      this.frameInFlight = false;
+    }
+  }
+
+  private async processFrameInner(imageBase64: string, options: { source: FrameSource }): Promise<FrameResult> {
     // 1. Fall pose first — a fall in progress suppresses all chatter below
     const fallPose =
       config.fallDetection.enabled && config.fallDetection.mode === 'frame'
@@ -110,16 +126,17 @@ class MonitoringCore extends EventEmitter {
       fallDetectionService.updateFromFrame(fallPose, config.patient.name);
     }
 
-    // 2. Scene analysis + contextual messaging
-    const sceneAnalysis = await analyzeScene(imageBase64, this.getMedicationScheduleContext());
+    // 2. ONE combined vision call: scene + pill organizer together
+    const frame = await analyzeFrame(imageBase64, config.patient.name, this.getMedicationScheduleContext());
+    const sceneAnalysis = frame.scene;
+    const pillResult = frame.pills;
+
     const visionMessage = this.processSceneAnalysis(sceneAnalysis, {
       emitUpdates: options.source === 'continuous' && !suppress,
       speak: options.source === 'continuous' && !suppress,
       recordMemory: !suppress,
     });
 
-    // 3. Pill check
-    const pillResult = await analyzePillImage(imageBase64);
     const method: 'vision' | 'yolo' = 'vision';
     const confidence = pillResult.confidence as 'high' | 'medium' | 'low';
     const observations = pillResult.observations;
